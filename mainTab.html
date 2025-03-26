@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Students list</title>
+    <link rel="stylesheet" href="pviStyle.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <script src="pviJs.js"></script>
+    <header>
+        <div><a href="mainTab.html">CMS</a></div>
+        <div class="right">
+            <div class="notification-container">
+                <div class="bell-icon" id="notificationBell"><span class="material-symbols-outlined">
+                        notifications
+                    </span></div>
+                <span class="notification-indicator" id="notificationIndicator"></span>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-item">
+                        <div>
+                            <strong>Студент 1</strong>
+                            <p>Нове повідомлення</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div>
+                            <strong>Студент 2</strong>
+                            <p>Ще одне повідомлення</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div>
+                            <strong>Студент 3</strong>
+                            <p>Останнє повідомлення</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div><span class="material-symbols-outlined">
+                    account_circle
+                </span></div>
+            <div style="position: relative;">
+                <p id="username" style="cursor: pointer;">Хрептак Андрій</p>
+                <div class="user-dropdown" id="userdropdown">
+                    <div>
+                        <p>Profile</p>
+                        <p>Log out</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <ul id="navul">
+            <li id="dashboardNav">
+                <a href="dashboard.html" class="nav-link">
+                    <span class="nav-text">Dashboard</span>
+                    <span class="nav-icon material-symbols-outlined">dashboard</span>
+                </a>
+            </li>
+            <li style="border: 2px solid black;">
+                <a href="mainTab.html" class="nav-link">
+                    <span class="nav-text">Students</span>
+                    <span class="nav-icon material-symbols-outlined">group</span>
+                </a>
+            </li>
+            <li>
+                <a href="tasksTab.html" class="nav-link">
+                    <span class="nav-text">Tasks</span>
+                    <span class="nav-icon material-symbols-outlined">task</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div>
+        <button onclick="openDltModal(null, 2)" class="deleteSelected"><span
+                class="material-symbols-outlined">delete</span></button>
+        <button onclick="openModal()" class="AddStudentButton">+</button>
+    </div>
+    <div class="table-container">
+        <table id="table">
+            <caption style="text-align: center;">Students</caption>
+            <tr class="tableHeading">
+                <th style="width: 5%;"><input id="masterCheckbox" type="checkbox"></th>
+                <th style="width: 10%;">Group</th>
+                <th style="width: 30%;">Name</th>
+                <th style="width: 10%;">Gender</th>
+                <th style="width: 15%;">Birthday</th>
+                <th style="width: 10%;">Status</th>
+                <th style="width: 20%;">Options</th>
+            </tr>
+        </table>
+    </div>
+
+    <div id="deleteModal" class="dltModal">
+        <div class="dltModalContent">
+            <button style="float: right" onclick="closeDltModal()">X</button>
+            <p id="dltText">buhrhru</p>
+            <button id="deleteModalButton">Ok</button>
+            <button onclick="closeDltModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <button style="float:right" id="close" onclick="closeModal()">X</button>
+            <h2>Add New Student</h2>
+            <label>Group:</label>
+            <select id="groupDropdown">
+                <option value="PZ21">PZ21</option>
+                <option value="PZ22">PZ22</option>
+                <option value="PZ23">PZ23</option>
+                <option value="PZ24">PZ24</option>
+                <option value="PZ25">PZ25</option>
+                <option value="PZ26">PZ26</option>
+            </select>
+            <label>Name:</label> <input type="text" id="name"><br>
+            <label>Gender:</label>
+            <select id="genderDropdown">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <label>Birthday:</label> <input type="date" id="birthday"><br>
+            <div class="buttons">
+                <button style="float:right; margin: 10px;" id="addStudent" onclick="AddStudent()">Create</button>
+                <button style="float:right; margin: 10px;" id="okButton" onclick="OkButtonClick()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="pagination-buttons">
+            <button class="pag-button">&#60;</button>
+            <button class="pag-button">1</button>
+            <button class="pag-button">2</button>
+            <button class="pag-button">&#62;</button>
+        </div>
+    </div>
+</body>
+
+</html>
