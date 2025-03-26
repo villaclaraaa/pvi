@@ -18,6 +18,12 @@ function openModal(mode, row){
         modal.classList.add("show"); // Trigger slide-down animation
     }, 10); // Delay ensures transition works properly
 
+
+    document.getElementById("groupDropdown").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("genderDropdown").value = "";
+    document.getElementById("birthday").value = "";
+
     let okButton = document.getElementById("okButton");
     let addButton = document.getElementById("addStudent");
 
@@ -124,11 +130,7 @@ function AddStudent(){
         openModal(1, newRow);
     });
 
-    document.getElementById("groupDropdown").value = "";
-    document.getElementById("name").value = "";
-    document.getElementById("genderDropdown").value = "";
-    document.getElementById("birthday").value = "";
-
+    
 }
 
 function OkButtonClick(){
