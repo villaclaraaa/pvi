@@ -156,8 +156,8 @@ function OkButtonClick(){
 
     students[studentsCount] = new Student(group, name, gender, birth, status);
 
-    newRow.insertCell(0).innerHTML = '<input type="checkbox" class="row-checkbox">';
-    
+    newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
+
     newRow.insertCell(1).textContent = group;
     newRow.insertCell(2).textContent = name;
     newRow.insertCell(3).textContent = gender;
@@ -166,13 +166,12 @@ function OkButtonClick(){
     
     let optionsCell = newRow.insertCell(6);
     let editBtn = document.createElement("button");
+    editBtn.className = "editButton editBtn";
     editBtn.innerHTML = '<span class="material-symbols-outlined">edit</span>';
     editBtn.classList.add("editBtn");
-    editBtn.addEventListener("click", function(){
-        openModal();
-    })
     
     let deleteBtn = document.createElement("button");
+    deleteBtn.className = "editButton editBtn";
     deleteBtn.innerHTML = '<span class="material-symbols-outlined">delete</span>';
     deleteBtn.classList.add("deleteBtn");
     
@@ -182,7 +181,11 @@ function OkButtonClick(){
 
     deleteBtn.addEventListener("click", function() {
         openDltModal(newRow, 1);
-        //table.deleteRow(newRow.rowIndex);
+        //able.deleteRow(newRow.rowIndex);
+    });
+
+    editBtn.addEventListener("click", function(){
+        openModal(1, newRow);
     });
     
     
@@ -200,6 +203,16 @@ function editStudent(row)
     row.cells[3].textContent = gender;
     row.cells[4].textContent = birth;
 
+    let studentData = {
+        group: row.cells[1].textContent,
+        name: row.cells[2].textContent,
+        gender: row.cells[3].textContent,
+        birth: row.cells[4].textContent
+    };
+    
+    let jsonString = JSON.stringify(studentData);
+    console.log(jsonString);
+     
     closeModal();
 }
 
@@ -340,4 +353,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(() => console.log("Service Worker registered"))
+      .catch((err) => console.error("Service Worker registration failed", err));
+  }
