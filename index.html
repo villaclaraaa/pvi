@@ -65,7 +65,7 @@
                 </a>
             </li>
             <li style="border: 2px solid black;">
-                <a href="index.html" class="nav-link">
+                <a href="mainTab.html" class="nav-link">
                     <span class="nav-text">Students</span>
                     <span class="nav-icon material-symbols-outlined">group</span>
                 </a>
@@ -81,7 +81,7 @@
     <div>
         <button onclick="openDltModal(null, 2)" class="deleteSelected"><span
                 class="material-symbols-outlined">delete</span></button>
-        <button onclick="openModal()" class="AddStudentButton">+</button>
+        <button onclick="openModal(2, null)" class="AddStudentButton">+</button>
     </div>
     <div class="table-container">
         <table id="table">
@@ -110,7 +110,7 @@
     <div id="myModal" class="modal">
         <div class="modal-content">
             <button style="float:right" id="close" onclick="closeModal()">X</button>
-            <h2>Add New Student</h2>
+            <h2 id="headerModal">Add New Student</h2>
             <label>Group:</label>
             <select id="groupDropdown">
                 <option value="PZ21">PZ21</option>
@@ -128,8 +128,8 @@
             </select>
             <label>Birthday:</label> <input type="date" id="birthday"><br>
             <div class="buttons">
-                <button style="float:right; margin: 10px;" id="addStudent" onclick="AddStudent()">Create</button>
-                <button style="float:right; margin: 10px;" id="okButton" onclick="OkButtonClick()">OK</button>
+                <button style="float:right; margin: 10px;" id="addStudent" >Create</button>
+                <button style="float:right; margin: 10px;" id="okButton" >OK</button>
             </div>
         </div>
     </div>

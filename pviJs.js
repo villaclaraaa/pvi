@@ -10,14 +10,52 @@ function Student(group, name, gender, birth, status){
 let studentsCount = 0;
 let students = [];
 
-function openModal(){
+function openModal(mode, row){
     let modal = document.getElementById("myModal");
     modal.style.display = "block"; // Make it visible
 
     setTimeout(() => {
         modal.classList.add("show"); // Trigger slide-down animation
     }, 10); // Delay ensures transition works properly
+
+    let okButton = document.getElementById("okButton");
+    let addButton = document.getElementById("addStudent");
+
+    okButton.removeEventListener("click", editStudent);
+    okButton.removeEventListener("click", OkButtonClick);
+    addButton.removeEventListener("click", editStudent);
+    addButton.removeEventListener("click", AddStudent);
+
+    if(mode == 1)
+    {
+        okButton.addEventListener("click", function(){
+            editStudent(row);
+        });
+        addButton.addEventListener("click", function(){
+            editStudent(row);
+        });
+
+        let group = document.getElementById("groupDropdown");
+        let name = document.getElementById("name");
+        let gender = document.getElementById("genderDropdown");
+        let birth = document.getElementById("birthday");
+        group.value = row.cells[1].textContent;
+        name.value = row.cells[2].textContent;
+        gender.value = row.cells[3].textContent;
+        birth.value = row.cells[4].textContent;
+        document.getElementById("headerModal").innerHTML = "Change info";
+        document.getElementById("addStudent").innerHTML = "Change";
+    }
+    else
+    {
+        okButton.addEventListener("click", OkButtonClick);
+        addButton.addEventListener("click", AddStudent);
+        document.getElementById("headerModal").innerHTML = "Add New Student";
+        document.getElementById("addStudent").innerHTML = "Create";
+    }
 }
+
+
 
 function closeModal(){
     let modal = document.getElementById("myModal");
@@ -82,6 +120,15 @@ function AddStudent(){
         //able.deleteRow(newRow.rowIndex);
     });
 
+    editBtn.addEventListener("click", function(){
+        openModal(1, newRow);
+    });
+
+    document.getElementById("groupDropdown").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("genderDropdown").value = "";
+    document.getElementById("birthday").value = "";
+
 }
 
 function OkButtonClick(){
@@ -137,6 +184,21 @@ function OkButtonClick(){
     });
     
     
+}
+
+function editStudent(row)
+{
+    let group = document.getElementById("groupDropdown").value;
+    let name = document.getElementById("name").value;
+    let gender = document.getElementById("genderDropdown").value;
+    let birth = document.getElementById("birthday").value;
+
+    row.cells[1].textContent = group;
+    row.cells[2].textContent = name;
+    row.cells[3].textContent = gender;
+    row.cells[4].textContent = birth;
+
+    closeModal();
 }
 
 function deleteSelected(){
