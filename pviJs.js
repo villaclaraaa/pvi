@@ -91,6 +91,11 @@ function AddStudent(){
         alert("Please fill in all fields before adding a student!");
         return; // Stop function execution
     }
+    if(!validateInput(name))
+    {
+        alert("Write valid input for name field!");
+        return;
+    }
     if(name == document.getElementById("username").innerHTML)
         status = "online";
     else
@@ -149,6 +154,11 @@ function OkButtonClick(){
         closeModal();
         return; // Stop function execution
     }
+    if(!validateInput(name))
+        {
+            alert("Write valid input for name field!");
+            return;
+        }
     if(name == document.getElementById("username").innerHTML)
         status = "online";
     else
@@ -191,6 +201,11 @@ function OkButtonClick(){
     
 }
 
+function validateInput(input) {
+    const pattern = /^[a-zA-Z0-9-]{1,30}$/;
+    return pattern.test(input);
+  }
+
 function editStudent(row)
 {
     let group = document.getElementById("groupDropdown").value;
@@ -199,6 +214,11 @@ function editStudent(row)
     let birth = document.getElementById("birthday").value;
 
     row.cells[1].textContent = group;
+    if(!validateInput(name))
+    {
+        alert("Write valid input for name field!");
+        return;
+    }
     row.cells[2].textContent = name;
     row.cells[3].textContent = gender;
     row.cells[4].textContent = birth;
