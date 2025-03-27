@@ -4,17 +4,17 @@ const CACHE_NAME = "pwa-cache-v1";
 // Масив ресурсів, які будуть кешовані при встановленні Service Worker 
 // ви кешуєте всі свої файли
 const ASSETS = [
-  "/",           
-  "/index.html",           
-  "/nav.css",           
-  "/pviJs.js",
-  "/pviStyle.css",
-  "/tasksTab.html",
-  "/dashboard.html",
-  "/icons/icons.512.png",
-  "/icons/icons.256.png",            
-  "/icons/icons.192.png",            
-  "/icons/icons.128.png",            
+  "/pvi/",           
+  "/pvi/index.html",           
+  "/pvi/nav.css",           
+  "/pvi/pviJs.js",
+  "/pvi/pviStyle.css",
+  "/pvi/tasksTab.html",
+  "/pvi/dashboard.html",
+  "/pvi/icons/icons.512.png",
+  "/pvi/icons/icons.256.png",            
+  "/pvi/icons/icons.192.png",            
+  "/pvi/icons/icons.128.png",            
 
 ];
 
