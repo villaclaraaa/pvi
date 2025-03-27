@@ -12,36 +12,23 @@
   
     "icons": [
       {
-        "src": "/icons/icons.128.png", // Іконка для маленьких роздільних здатностей
+        "src": "/icons/icons.128.png",
         "sizes": "128x128",
         "type": "image/png"
       },
       {
-        "src": "/icons/icons.192.png", // Рекомендований розмір іконки для Android
+        "src": "/icons/icons.192.png", 
         "sizes": "192x192",
         "type": "image/png"
       },
       {
-        "src": "/icons/icons.256.png", // Додатковий розмір для кращої сумісності
+        "src": "/icons/icons.256.png", 
         "sizes": "256x256",
         "type": "image/png"
       },
       {
-        "src": "/icons/icons.512.png", // Велика іконка для сучасних пристроїв і Splash Screen
+        "src": "/icons/icons.512.png", 
         "sizes": "512x512",
-        "type": "image/png"
-      }
-    ],
-  
-    "screenshots": [ // Скріншоти, що можуть бути використані в маркетах PWA (наприклад, Google Play)
-      {
-        "src": "/screenshots/screenshot1.png",
-        "sizes": "1080x1920",
-        "type": "image/png"
-      },
-      {
-        "src": "/screenshots/screenshot2.png",
-        "sizes": "1080x1920",
         "type": "image/png"
       }
     ]

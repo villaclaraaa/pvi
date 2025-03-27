@@ -10,7 +10,12 @@ const ASSETS = [
   "/pviJs.js",
   "/pviStyle.css",
   "/tasksTab.html",
-  "/dashboard.html",            
+  "/dashboard.html",
+  "/icons/icons.512.png",
+  "/icons/icons.256.png",            
+  "/icons/icons.192.png",            
+  "/icons/icons.128.png",            
+
 ];
 
 // Подія встановлення Service Worker
