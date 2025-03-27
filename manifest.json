@@ -37,12 +37,14 @@
       {
         "src": "/pvi/screenshots/screenshot1.png",
         "sizes": "1920x1080",
-        "type": "image/png"
+        "type": "image/png",
+        "form_factor": "wide"
       },
       {
         "src": "/pvi/screenshots/screenshot2.png",
         "sizes": "1920x1080",
-        "type": "image/png"
-      }
+        "type": "image/png",
+        "form_factor": "narrow"
+      } 
     ]
   }
