@@ -23,9 +23,10 @@ const ASSETS = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Кешування ресурсів...");// логування не обовязкове
-      // Додаємо файли до кешу, якщо якийсь файл не вдасться завантажити, обробляємо помилку
-      return cache.addAll(ASSETS).catch(console.error);
+      console.log("Caching resources...");
+      ASSETS.forEach((asset) => {
+        cache.add(asset).catch((err) => console.error(`Failed to cache ${asset}:`, err));
+      });
     })
   );
 });
