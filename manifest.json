@@ -31,5 +31,18 @@
         "sizes": "512x512",
         "type": "image/png"
       }
+    ],
+
+    "screenshots": [ 
+      {
+        "src": "/pvi/screenshots/screenshot1.png",
+        "sizes": "1920x1080",
+        "type": "image/png"
+      },
+      {
+        "src": "/pvi/screenshots/screenshot2.png",
+        "sizes": "1920x1080",
+        "type": "image/png"
+      }
     ]
   }
