@@ -202,7 +202,7 @@ function OkButtonClick(){
 }
 
 function validateInput(input) {
-    const pattern = /^[a-zA-Z0-9-\s]{1,30}$/;
+    const pattern = /^[a-zA-Z0-9\u0400-\u04FF-\s]{1,30}$/;
     return pattern.test(input);
   }
 
