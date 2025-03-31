@@ -1,9 +1,10 @@
-function Student(group, name, gender, birth, status){
+function Student(group, name, gender, birth, status, id){
     this.group = group;
     this.name = name;
     this.gender = gender;
     this.birth = birth;
     this.status = status;
+    this.id = id;
 }
 
 
@@ -76,164 +77,171 @@ function closeModal(){
     }, 500); // Must match CSS transition time (0.5s)
 }
 
-function AddStudent(){
+function validateName(name) {
+    let namePattern = /^[a-zA-Zа-яА-ЯёЁіІїЇєЄ'-]{2,50}(?:\s[a-zA-Zа-яА-ЯёЁіІїЇєЄ'-]{1,50})*$/;
+    return namePattern.test(name);
+}
 
-    let table = document.getElementById("table"); 
-    let newRow = table.insertRow(); 
+function validateBirthdate(birth) {
+    let birthDate = new Date(birth);
+    let today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    let monthDiff = today.getMonth() - birthDate.getMonth();
 
-    let group = document.getElementById("groupDropdown").value;
-    let name = document.getElementById("name").value;
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--; // Adjust age if birthday hasn't occurred yet this year
+    }
+
+    return !isNaN(birthDate) && age >= 5;
+}
+
+function AddStudent() {
+    let table = document.getElementById("table");
+    let group = document.getElementById("groupDropdown").value.trim();
+    let name = document.getElementById("name").value.trim();
     let gender = document.getElementById("genderDropdown").value;
-    let birth = document.getElementById("birthday").value;
-    let status;
+    let birth = document.getElementById("birthday").value.trim();
 
     if (!group || !name || !gender || !birth) {
         alert("Please fill in all fields before adding a student!");
-        return; // Stop function execution
-    }
-    if(!validateInput(name))
-    {
-        alert("Write valid input for name field!");
         return;
     }
-    if(name == document.getElementById("username").innerHTML)
-        status = "online";
-    else
-        status = "offline";
+    
+    if (!validateName(name)) {
+        alert("Enter a valid name (only letters, spaces, and hyphens)!");
+        return;
+    }
 
-    students[studentsCount] = new Student(group, name, gender, birth, status);
+    if (!validateBirthdate(birth)) {
+        alert("Enter a valid birthdate (minimum age: 5 years)!");
+        return;
+    }
 
+    let status = (name === document.getElementById("username").innerHTML) ? "online" : "offline";
+    
+    // Assign unique ID
+    document.getElementById("studentId").value = students.length + 1;
+    let id = document.getElementById("studentId").value;
+
+    students.push(new Student(group, name, gender, birth, status, id));
+
+    let newRow = table.insertRow();
     newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
-
     newRow.insertCell(1).textContent = group;
     newRow.insertCell(2).textContent = name;
     newRow.insertCell(3).textContent = gender;
     newRow.insertCell(4).textContent = birth;
     newRow.insertCell(5).textContent = status;
-    
+
     let optionsCell = newRow.insertCell(6);
-    let editBtn = document.createElement("button");
-    editBtn.className = "editButton editBtn";
-    editBtn.innerHTML = '<span class="material-symbols-outlined">edit</span>';
-    editBtn.classList.add("editBtn");
-    
-    let deleteBtn = document.createElement("button");
-    deleteBtn.className = "editButton editBtn";
-    deleteBtn.innerHTML = '<span class="material-symbols-outlined">delete</span>';
-    deleteBtn.classList.add("deleteBtn");
-    
+    let editBtn = createButton("edit", "editBtn", () => openModal(1, newRow));
+    let deleteBtn = createButton("delete", "deleteBtn", () => openDltModal(newRow, 1));
+
     optionsCell.appendChild(editBtn);
     optionsCell.appendChild(deleteBtn);
+
     closeModal();
-
-    deleteBtn.addEventListener("click", function() {
-        openDltModal(newRow, 1);
-        //able.deleteRow(newRow.rowIndex);
-    });
-
-    editBtn.addEventListener("click", function(){
-        openModal(1, newRow);
-    });
-
-    
 }
 
-function OkButtonClick(){
-
-    let table = document.getElementById("table"); 
-    let newRow = table.insertRow(); 
-
-    let group = document.getElementById("groupDropdown").value;
-    let name = document.getElementById("name").value;
+function OkButtonClick() {
+    let table = document.getElementById("table");
+    let group = document.getElementById("groupDropdown").value.trim();
+    let name = document.getElementById("name").value.trim();
     let gender = document.getElementById("genderDropdown").value;
-    let birth = document.getElementById("birthday").value;
-    let status;
+    let birth = document.getElementById("birthday").value.trim();
 
     if (!group || !name || !gender || !birth) {
-        
         closeModal();
-        return; // Stop function execution
+        return;
     }
-    if(!validateInput(name))
-        {
-            alert("Write valid input for name field!");
-            return;
-        }
-    if(name == document.getElementById("username").innerHTML)
-        status = "online";
-    else
-        status = "offline";
 
-    students[studentsCount] = new Student(group, name, gender, birth, status);
+    if (!validateName(name)) {
+        alert("Enter a valid name (only letters, spaces, and hyphens)!");
+        return;
+    }
 
+    if (!validateBirthdate(birth)) {
+        alert("Enter a valid birthdate (minimum age: 5 years)!");
+        return;
+    }
+
+    let status = (name === document.getElementById("username").innerHTML) ? "online" : "offline";
+
+    students.push(new Student(group, name, gender, birth, status));
+
+    let newRow = table.insertRow();
     newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
-
     newRow.insertCell(1).textContent = group;
     newRow.insertCell(2).textContent = name;
     newRow.insertCell(3).textContent = gender;
     newRow.insertCell(4).textContent = birth;
     newRow.insertCell(5).textContent = status;
-    
+
     let optionsCell = newRow.insertCell(6);
-    let editBtn = document.createElement("button");
-    editBtn.className = "editButton editBtn";
-    editBtn.innerHTML = '<span class="material-symbols-outlined">edit</span>';
-    editBtn.classList.add("editBtn");
-    
-    let deleteBtn = document.createElement("button");
-    deleteBtn.className = "editButton editBtn";
-    deleteBtn.innerHTML = '<span class="material-symbols-outlined">delete</span>';
-    deleteBtn.classList.add("deleteBtn");
-    
+    let editBtn = createButton("edit", "editBtn", () => openModal(1, newRow));
+    let deleteBtn = createButton("delete", "deleteBtn", () => openDltModal(newRow, 1));
+
     optionsCell.appendChild(editBtn);
     optionsCell.appendChild(deleteBtn);
+
     closeModal();
-
-    deleteBtn.addEventListener("click", function() {
-        openDltModal(newRow, 1);
-        //able.deleteRow(newRow.rowIndex);
-    });
-
-    editBtn.addEventListener("click", function(){
-        openModal(1, newRow);
-    });
-    
-    
 }
 
-function validateInput(input) {
-    const pattern = /^[a-zA-Z0-9\u0400-\u04FF-\s]{1,30}$/;
-    return pattern.test(input);
-  }
+function createButton(icon, className, onClickHandler) {
+    let button = document.createElement("button");
+    button.className = `editButton ${className}`;
+    button.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+    button.addEventListener("click", onClickHandler);
+    return button;
+}
+
+
 
 function editStudent(row)
 {
-    let group = document.getElementById("groupDropdown").value;
-    let name = document.getElementById("name").value;
+    let group = document.getElementById("groupDropdown").value.trim();
+    let name = document.getElementById("name").value.trim();
     let gender = document.getElementById("genderDropdown").value;
-    let birth = document.getElementById("birthday").value;
+    let birth = document.getElementById("birthday").value.trim();
 
-    row.cells[1].textContent = group;
-    if(!validateInput(name))
-    {
-        alert("Write valid input for name field!");
+    if (!group) {
+        alert("Please select a group!");
         return;
     }
+
+    if (!validateName(name)) {
+        alert("Enter a valid name (only letters, spaces, and hyphens)!");
+        return;
+    }
+
+    if (!validateBirthdate(birth)) {
+        alert("Enter a valid birthdate (minimum age: 5 years)!");
+        return;
+    }
+
+    if (!gender) {
+        alert("Please select a gender!");
+        return;
+    }
+
+    row.cells[1].textContent = group;
     row.cells[2].textContent = name;
     row.cells[3].textContent = gender;
     row.cells[4].textContent = birth;
 
     let studentData = {
-        group: row.cells[1].textContent,
-        name: row.cells[2].textContent,
-        gender: row.cells[3].textContent,
-        birth: row.cells[4].textContent
+        group: group,
+        name: name,
+        gender: gender,
+        birth: birth
     };
-    
+
     let jsonString = JSON.stringify(studentData);
-    console.log(jsonString);
-     
+    console.log("Student Data:", jsonString);
+
+    // Close Modal
     closeModal();
+
 }
 
 function deleteSelected(){

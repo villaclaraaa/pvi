@@ -14,7 +14,7 @@
 <body>
     <script src="pviJs.js"></script>
     <header>
-        <div><a href="mainTab.html">CMS</a></div>
+        <div><a href="index.html">CMS</a></div>
         <div class="right">
             <div class="notification-container">
                 <div class="bell-icon" id="notificationBell"><span class="material-symbols-outlined">
@@ -112,8 +112,10 @@
         <div class="modal-content">
             <button style="float:right" id="close" onclick="closeModal()">X</button>
             <h2 id="headerModal">Add New Student</h2>
+    
             <label>Group:</label>
-            <select id="groupDropdown">
+            <select id="groupDropdown" required>
+                <option value="" disabled selected>Select Group</option>
                 <option value="PZ21">PZ21</option>
                 <option value="PZ22">PZ22</option>
                 <option value="PZ23">PZ23</option>
@@ -121,16 +123,27 @@
                 <option value="PZ25">PZ25</option>
                 <option value="PZ26">PZ26</option>
             </select>
-            <label>Name:</label> <input type="text" id="name"><br>
+    
+            <label>Name:</label> 
+            <input type="text" id="name" required 
+                   pattern="[a-zA-Zа-яА-ЯёЁіІїЇєЄ'-]{2,50}" 
+                   title="Only letters, spaces, and hyphens (2-50 characters)"><br>
+    
             <label>Gender:</label>
-            <select id="genderDropdown">
+            <select id="genderDropdown" required>
+                <option value="" disabled selected>Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
             </select>
-            <label>Birthday:</label> <input type="date" id="birthday"><br>
+    
+            <label>Birthday:</label> 
+            <input type="date" id="birthday" required><br>
+    
+            <input type="hidden" id="studentId" name="studentId">
+    
             <div class="buttons">
-                <button style="float:right; margin: 10px;" id="addStudent" >Create</button>
-                <button style="float:right; margin: 10px;" id="okButton" >OK</button>
+                <button style="float:right; margin: 10px;" id="addStudent">Create</button>
+                <button style="float:right; margin: 10px;" id="okButton">OK</button>
             </div>
         </div>
     </div>
