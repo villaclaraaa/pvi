@@ -78,7 +78,7 @@ function closeModal(){
 }
 
 function validateName(name) {
-    let namePattern = /^[a-zA-Zа-яА-ЯёЁіІїЇєЄ'-]{2,50}(?:\s[a-zA-Zа-яА-ЯёЁіІїЇєЄ'-]{1,50})*$/;
+    let namePattern = /^[a-zA-Zа-яА-ЯіІїЇєЄ'-]{2,50}(?:\s[a-zA-Zа-яА-ЯіІїЇєЄ'-]{1,50})*$/;
     return namePattern.test(name);
 }
 
@@ -126,7 +126,10 @@ function AddStudent() {
     students.push(new Student(group, name, gender, birth, status, id));
 
     let newRow = table.insertRow();
-    newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
+    newRow.insertCell(0).innerHTML = `
+    <label style="cursor: pointer;">
+        <input type="checkbox" class="row-checkbox"> Title
+    </label>`;
     newRow.insertCell(1).textContent = group;
     newRow.insertCell(2).textContent = name;
     newRow.insertCell(3).textContent = gender;
