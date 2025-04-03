@@ -1,6 +1,7 @@
-function Student(group, name, gender, birth, status, id){
+function Student(group, firstname, lastname, gender, birth, status, id){
     this.group = group;
-    this.name = name;
+    this.firstName = firstname;
+    this.lastName = lastname;
     this.gender = gender;
     this.birth = birth;
     this.status = status;
@@ -21,7 +22,8 @@ function openModal(mode, row){
 
 
     document.getElementById("groupDropdown").value = "";
-    document.getElementById("name").value = "";
+    document.getElementById("firstName").value = "";
+    document.getElementById("lastName").value = "";
     document.getElementById("genderDropdown").value = "";
     document.getElementById("birthday").value = "";
 
@@ -43,11 +45,13 @@ function openModal(mode, row){
         });
 
         let group = document.getElementById("groupDropdown");
-        let name = document.getElementById("name");
+        let firstName = document.getElementById("firstName");  
+        let lastName = document.getElementById("lastName");
         let gender = document.getElementById("genderDropdown");
         let birth = document.getElementById("birthday");
         group.value = row.cells[1].textContent;
-        name.value = row.cells[2].textContent;
+        firstName.value = row.cells[2].dataset.firstName;
+        lastName.value = row.cells[2].dataset.lastName;
         gender.value = row.cells[3].textContent;
         birth.value = row.cells[4].textContent;
         document.getElementById("headerModal").innerHTML = "Change info";
@@ -55,6 +59,7 @@ function openModal(mode, row){
     }
     else
     {
+        console.log("here1");
         okButton.addEventListener("click", OkButtonClick);
         addButton.addEventListener("click", AddStudent);
         document.getElementById("headerModal").innerHTML = "Add New Student";
@@ -75,63 +80,97 @@ function closeModal(){
         modal.classList.remove("closing"); // Reset animation state
         modal.style.display = "none"; // Hide modal after animation completes
     }, 500); // Must match CSS transition time (0.5s)
+
+    let firstNameInput = document.getElementById("firstName");
+    let lastNameInput = document.getElementById("lastName");
+    let birthInput = document.getElementById("birthday");
+    clearError(firstNameInput);
+    clearError(lastNameInput);
+    clearError(birthInput);
+
 }
 
-function validateName(name) {
+function showError(input, message) {
+    let errorSpan = input.nextElementSibling; // Get next element (error message)
+    errorSpan.textContent = message;
+    input.classList.add("input-error");
+}
+
+function clearError(input) {
+    let errorSpan = input.nextElementSibling;
+    errorSpan.innerHTML = "&nbsp;";
+    input.classList.remove("input-error");
+}
+
+function validateName(nameInput) {
     let namePattern = /^[a-zA-Zа-яА-ЯіІїЇєЄ'-]{2,50}(?:\s[a-zA-Zа-яА-ЯіІїЇєЄ'-]{1,50})*$/;
-    return namePattern.test(name);
+    if (!namePattern.test(nameInput.value.trim())) {
+        showError(nameInput, "Enter a valid name (only letters, spaces, hyphens).");
+        return false;
+    }
+    clearError(nameInput);
+    return true;
 }
 
-function validateBirthdate(birth) {
-    let birthDate = new Date(birth);
+function validateDropdown(input){
+    if(!input.value)
+    {
+        showError(input, "Please fill this dropdown.");
+        return false;
+    }
+    return true;
+}
+
+function validateBirthdate(birthInput) {
+    let birthDate = new Date(birthInput.value);
     let today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
-    let monthDiff = today.getMonth() - birthDate.getMonth();
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--; // Adjust age if birthday hasn't occurred yet this year
+    if (isNaN(birthDate) || age < 5) {
+        showError(birthInput, "Minimum age is 5 years.");
+        return false;
     }
-
-    return !isNaN(birthDate) && age >= 5;
+    clearError(birthInput);
+    return true;
 }
 
+
 function AddStudent() {
+
     let table = document.getElementById("table");
     let group = document.getElementById("groupDropdown").value.trim();
-    let name = document.getElementById("name").value.trim();
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
     let gender = document.getElementById("genderDropdown").value;
     let birth = document.getElementById("birthday").value.trim();
 
-    if (!group || !name || !gender || !birth) {
-        alert("Please fill in all fields before adding a student!");
-        return;
-    }
+    let firstNameInput = document.getElementById("firstName");
+    let lastNameInput = document.getElementById("lastName");
+    let birthInput = document.getElementById("birthday");
+    let groupDropdown = document.getElementById("groupDropdown");
+    let genderDropdown = document.getElementById("genderDropdown");
+
+   
+    let isValid = validateName(firstNameInput) & validateName(lastNameInput) & validateBirthdate(birthInput) 
+    & validateDropdown(groupDropdown) & validateDropdown(genderDropdown);
+    if (!isValid) return;
+
     
-    if (!validateName(name)) {
-        alert("Enter a valid name (only letters, spaces, and hyphens)!");
-        return;
-    }
+    let status = (firstName + " " + lastName === document.getElementById("username").innerHTML) ? "online" : "offline";
+    let id = students.length + 1;
 
-    if (!validateBirthdate(birth)) {
-        alert("Enter a valid birthdate (minimum age: 5 years)!");
-        return;
-    }
-
-    let status = (name === document.getElementById("username").innerHTML) ? "online" : "offline";
-    
-    // Assign unique ID
-    document.getElementById("studentId").value = students.length + 1;
-    let id = document.getElementById("studentId").value;
-
-    students.push(new Student(group, name, gender, birth, status, id));
+    students.push(new Student(group, firstName, lastName, gender, birth, status, id));
 
     let newRow = table.insertRow();
-    newRow.insertCell(0).innerHTML = `
-    <label style="cursor: pointer;">
-        <input type="checkbox" class="row-checkbox"> Title
-    </label>`;
+
+    newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
     newRow.insertCell(1).textContent = group;
-    newRow.insertCell(2).textContent = name;
+    
+    let nameCell = newRow.insertCell(2);
+    nameCell.innerHTML = firstName + " " + lastName;
+    nameCell.dataset.firstName = firstName;
+    nameCell.dataset.lastName = lastName;  
+    
     newRow.insertCell(3).textContent = gender;
     newRow.insertCell(4).textContent = birth;
     newRow.insertCell(5).textContent = status;
@@ -149,22 +188,19 @@ function AddStudent() {
 function OkButtonClick() {
     let table = document.getElementById("table");
     let group = document.getElementById("groupDropdown").value.trim();
-    let name = document.getElementById("name").value.trim();
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
     let gender = document.getElementById("genderDropdown").value;
     let birth = document.getElementById("birthday").value.trim();
 
-    if (!group || !name || !gender || !birth) {
+    let firstNameInput = document.getElementById("firstName");
+    let lastNameInput = document.getElementById("lastName");
+    let birthInput = document.getElementById("birthday");
+    let isValid = validateName(firstNameInput) & validateName(lastNameInput) & validateBirthdate(birthInput);
+    if (!isValid)
+    {
         closeModal();
-        return;
-    }
-
-    if (!validateName(name)) {
-        alert("Enter a valid name (only letters, spaces, and hyphens)!");
-        return;
-    }
-
-    if (!validateBirthdate(birth)) {
-        alert("Enter a valid birthdate (minimum age: 5 years)!");
+        
         return;
     }
 
@@ -175,7 +211,9 @@ function OkButtonClick() {
     let newRow = table.insertRow();
     newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
     newRow.insertCell(1).textContent = group;
-    newRow.insertCell(2).textContent = name;
+    nameCell.textContent = firstName + " " + lastName;
+    nameCell.dataset.firstName = firstName;
+    nameCell.dataset.lastName = lastName;
     newRow.insertCell(3).textContent = gender;
     newRow.insertCell(4).textContent = birth;
     newRow.insertCell(5).textContent = status;
@@ -203,7 +241,8 @@ function createButton(icon, className, onClickHandler) {
 function editStudent(row)
 {
     let group = document.getElementById("groupDropdown").value.trim();
-    let name = document.getElementById("name").value.trim();
+    let firstname = document.getElementById("firstName").value.trim();
+    let lastname = document.getElementById("lastName").value.trim();
     let gender = document.getElementById("genderDropdown").value;
     let birth = document.getElementById("birthday").value.trim();
 
@@ -212,8 +251,13 @@ function editStudent(row)
         return;
     }
 
-    if (!validateName(name)) {
-        alert("Enter a valid name (only letters, spaces, and hyphens)!");
+    if (!validateName(firstname)) {
+        alert("Enter a valid firstname (only letters, spaces, and hyphens)!");
+        return;
+    }
+
+    if (!validateName(lastname)) {
+        alert("Enter a valid lastname (only letters, spaces, and hyphens)!");
         return;
     }
 
@@ -227,6 +271,7 @@ function editStudent(row)
         return;
     }
 
+    let name = firstname + " " + lastname;
     row.cells[1].textContent = group;
     row.cells[2].textContent = name;
     row.cells[3].textContent = gender;

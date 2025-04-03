@@ -126,11 +126,15 @@
                 <option value="PZ25">PZ25</option>
                 <option value="PZ26">PZ26</option>
             </select>
+            <span class="error-message">&nbsp;</span>
     
-            <label>Name:</label> 
-            <input type="text" id="name" required 
-                   pattern="[a-zA-Zа-яА-ЯіІїЇєЄ'-]{2,50}" 
-                   title="Only letters, spaces, and hyphens (2-50 characters)"><br>
+            <label>First Name:</label> 
+            <input type="text" id="firstName" required>
+            <span class="error-message">&nbsp;</span>  
+    
+            <label>Last Name:</label> 
+            <input type="text" id="lastName" required>
+            <span class="error-message">&nbsp;</span>
     
             <label>Gender:</label>
             <select id="genderDropdown" required>
@@ -138,9 +142,11 @@
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
             </select>
+            <span class="error-message">&nbsp;</span>
     
             <label for="birthday">Birthday:</label>
             <input type="date" id="birthday" required>
+            <span class="error-message">&nbsp;</span>
     
             <input type="hidden" id="studentId" name="studentId">
     

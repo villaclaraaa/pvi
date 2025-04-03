@@ -165,6 +165,12 @@ tr:nth-child(even) {
   transition: opacity 0.3s ease-in-out;
 }
 
+
+@media (max-width: 768px) {
+  .modal-content{
+    height: 60vh !important;
+  }
+}
 .modal-content {  
   position:absolute;
   top: -100%;
@@ -176,7 +182,7 @@ tr:nth-child(even) {
   padding: 20px;
   border: 1px solid #888;
   width: 38vh;
-  height: 45vh;
+  height: 56vh;
   text-align: center;
   border-radius: 2vh;
 }
@@ -186,7 +192,7 @@ opacity: 1;
 }
 
 .modal.show .modal-content {
-top: 10%; 
+top: 0%; 
 }
 
 .modal.closing {
@@ -208,7 +214,6 @@ margin-bottom: 1.5vh;
 .modal-content label {
 display: block;
 font-weight: bold;
-margin-top: 1vh;
 }
 
 .modal-content input
@@ -227,6 +232,16 @@ border: 1px solid #ccc;
 border-radius: 4px;
 }
 
+
+.input-error {
+  border: 2px solid red;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  display: block;
+}
 
 
 
