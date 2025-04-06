@@ -118,6 +118,7 @@ function validateDropdown(input){
         showError(input, "Please fill this dropdown.");
         return false;
     }
+    clearError(input);
     return true;
 }
 
