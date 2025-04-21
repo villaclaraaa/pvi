@@ -46,11 +46,11 @@
                     account_circle
                 </span></div>
             <div style="position: relative;">
-                <p id="username" style="cursor: pointer;">Хрептак Андрій</p>
+                <p id="username" style="cursor: pointer;">Logged out</p>
                 <div class="user-dropdown" id="userdropdown">
                     <div>
-                        <p>Profile</p>
-                        <p>Log out</p>
+                        <button style="font-size: 26px; font-family: arial, sans-serif; border-color: white; margin-bottom: 10px;">Profile</button>
+                        <button  id="loginbutton" onclick="OpenLogInModal()" style="font-size: 26px; font-family: arial, sans-serif; border-color: white;">Log In</button>
                     </div>
                 </div>
             </div>
@@ -101,6 +101,19 @@
             </tr>
         </table>
     </div>
+
+
+    <div id="loginModal" class="modalLogIn">
+        <div class="modal-content-LogIn">
+          <span class="closeLogIn" onclick="closeLogInModal()">&times;</span>
+          <h2>Login</h2>
+            <input type="text" placeholder="Username" id="loginInput" required>
+            <span class="error-message">&nbsp;</span>
+            <input type="password" placeholder="Password" id="passwordInput" required>
+            <span class="error-message">&nbsp;</span>
+            <button type="submit"  onclick="TryLogIn()">Log In</button>
+        </div>
+      </div>
 
     <div id="deleteModal" class="dltModal">
         <div class="dltModalContent">
@@ -158,10 +171,14 @@
     </div>
 
     <div>
+        <div class="warning" id="warning" style="display: none; height: 100vh; width: 100vw;">
+            <span style="color: red; font-size: 100px;">YOU ARE A BAD GUY GO AWAY</span>
+        </div>
+    </div>
+    <div>
         <div class="pagination-buttons">
             <button class="pag-button">&#60;</button>
             <button class="pag-button">1</button>
-            <button class="pag-button">2</button>
             <button class="pag-button">&#62;</button>
         </div>
     </div>

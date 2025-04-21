@@ -168,7 +168,8 @@ tr:nth-child(even) {
 
 @media (max-width: 768px) {
   .modal-content{
-    height: 60vh !important;
+    height: 50vh !important;
+    width: 60vw !important;
   }
   .notification-dropdown{
     width: 40vw !important;
@@ -184,8 +185,8 @@ tr:nth-child(even) {
   margin: 10% auto;
   padding: 20px;
   border: 1px solid #888;
-  width: 38vh;
-  height: 56vh;
+  width: 20vw;
+  height: 60vh;
   text-align: center;
   border-radius: 2vh;
 }
@@ -267,6 +268,7 @@ height: 0.7vh;
 background-color: red;
 border-radius: 50%;
 display: block;
+display: none;
 }
 .notification-dropdown {
 position: absolute;
@@ -296,7 +298,6 @@ opacity: 1;
 .notification-item {
 display: flex;
 align-items: center;
-margin-bottom: 5px;
 }
 
 .bell-animate {
@@ -343,7 +344,7 @@ vertical-align: middle;
 .user-dropdown {
 position: absolute;
 top: 100%; 
-left: 0;
+left: -10%;
 width: 100%;
 
 background: white;
@@ -362,4 +363,70 @@ transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3
 opacity: 1;
   visibility: visible;
   transform: translateY(0); 
+}
+
+
+.modalLogIn {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content-LogIn {
+  position:absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: top 0.5s ease-in-out;
+  background-color: white;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 38vh;
+  height: 30vh;
+  text-align: center;
+  border-radius: 2vh;
+}
+
+.closeLogIn {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.closeLogIn:hover {
+  color: #000;
+}
+
+input[type="text"], input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  box-sizing: border-box;
+}
+
+.modalLogIn.show {
+  display: block;
+  opacity: 1;
+}
+
+.modalLogIn.show .modal-content-LogIn {
+  top: 10%; 
+}
+
+.modalLogIn.closing {
+  opacity: 0; 
+}
+
+.modalLogIn.closing .modal-content-LogIn {
+  top: -100%; 
 }
