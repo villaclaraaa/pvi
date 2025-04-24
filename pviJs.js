@@ -630,74 +630,75 @@ function TryLogIn() {
     let passwordInput = document.getElementById("passwordInput");
     clearError(passwordInput);
     clearError(loginInput);
-    let validlogin = false;
 
-    students.forEach((student) => {
-        if (student.firstName + " " + student.lastName == login) {
-            validlogin = true;
-            if (student.gender == password) {
-                userLogined = true;
+    fetch('http://localhost:80/login.php', { // Send to login.php
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: login, password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            userLogined = true;
+            localStorage.setItem("userLogined", "true");
+            localStorage.setItem("username", data.username); // Use username from response
 
-                localStorage.setItem("userLogined", "true"); 
-                localStorage.setItem("username", login);
+            let username = document.getElementById("username");
+            username.innerText = data.username;
+            let loginbutton = document.getElementById("loginbutton");
+            loginbutton.innerText = "Log out";
+            loginbutton.onclick = LogOut;
 
-                let username = document.getElementById("username");
-                username.innerText = login;
-                console.log(username.innerText);
-                let loginbutton = document.getElementById("loginbutton");
-                loginbutton.innerText = "Log out";
-                console.log(loginbutton);
-                student.status = "online";
-                
-                updateTable();
-                
-                
-                closeLogInModal();
-                loginbutton.onclick = LogOut;
-
-
-                let bell = document.getElementById("notificationBell");
-                let indicator = document.getElementById("notificationIndicator");
-                let dropdown = document.getElementById("notificationDropdown");
-                let notification = document.getElementById("notificationIndicator");
-                notification.style.display = "block";
-                bell.addEventListener("click", function () {
-                    indicator.style.display = "none";
-                    window.location.href = "tasksTab.html";
-                });
-
-                bell.addEventListener("mouseover", function () {
-                    dropdown.classList.add("show");
-                    bell.classList.add("bell-animate");
-                    notification.style.display = "none";
-
-                });
-
-                bell.addEventListener("mouseleave", function () {
-                    dropdown.classList.remove("show");
-                    bell.classList.remove("bell-animate");
-                });
-
-                dropdown.addEventListener("mouseover", function () {
-                    dropdown.classList.add("show");
-                });
-
-                dropdown.addEventListener("mouseleave", function () {
-                    dropdown.classList.remove("show");
-                });
-
-                return;
+            for (let i = 0; i < students.length; i++) {
+                if (students[i].firstName + " " + students[i].lastName == username.innerText) {
+                    students[i].status = "online";
+                }
+        
             }
-            else {
+
+            // ... (Rest of your UI update logic, including notification bell)
+            let bell = document.getElementById("notificationBell");
+            let indicator = document.getElementById("notificationIndicator");
+            let dropdown = document.getElementById("notificationDropdown");
+            let notification = document.getElementById("notificationIndicator");
+            notification.style.display = "block";
+            bell.addEventListener("click", function () {
+                indicator.style.display = "none";
+                window.location.href = "tasksTab.html";
+            });
+
+            bell.addEventListener("mouseover", function () {
+                dropdown.classList.add("show");
+                bell.classList.add("bell-animate");
+                notification.style.display = "none";
+            });
+
+            bell.addEventListener("mouseleave", function () {
+                dropdown.classList.remove("show");
+                bell.classList.remove("bell-animate");
+            });
+
+            dropdown.addEventListener("mouseover", function () {
+                dropdown.classList.add("show");
+            });
+
+            dropdown.addEventListener("mouseleave", function () {
+                dropdown.classList.remove("show");
+            });
+
+            closeLogInModal();
+            updateTable();
+
+        } else {
+            if (data.message === "Wrong password") {
                 showError(passwordInput, "Wrong password");
-                return;
-            }
+            } else if (data.message === "Wrong login") {
+                showError(loginInput, "Wrong login!");
+            } 
         }
     });
-    if(!validlogin)
-        showError(loginInput, "Wrong login!");
-
 }
+    
 
 function LogOut() {
     userLogined = false;

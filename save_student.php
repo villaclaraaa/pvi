@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 
 header("Access-Control-Allow-Headers: Content-Type");
@@ -9,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(204); // No content
     exit;
 }
-
 $input = file_get_contents("php://input");
 $data = json_decode($input, true);
 
