@@ -193,13 +193,10 @@ function AddStudent() {
     let id = maxId + 1;
     maxId++;
 
-    students.push(new Student(group, firstName, lastName, gender, birth, status, id));
-
-    updateTable();
-    updatePaginationButtons(students);
-
+    
+    
     closeModal();
-
+    
     let studentData = {
         id: id,
         group: group,
@@ -208,17 +205,19 @@ function AddStudent() {
         gender: gender,
         birth: birth
     };
-
-    //fetch("save_student.php", {
-    fetch("http://localhost:80/save_student.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(studentData)
-    })
+    
+        fetch("http://localhost:80/save_student.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(studentData)
+        })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 console.log("Student saved:", data.student);
+                students.push(new Student(group, firstName, lastName, gender, birth, status, id));
+                updateTable();
+                updatePaginationButtons(students);
             } else {
                 alert("Failed to save student: " + data.message);
             }
@@ -226,13 +225,14 @@ function AddStudent() {
         .catch(err => {
             console.error("Error saving student:", err);
         });
-}
 
-function OkButtonClick() {
-    let table = document.getElementById("table");
-    let group = document.getElementById("groupDropdown").value.trim();
-    let firstName = document.getElementById("firstName").value.trim();
-    let lastName = document.getElementById("lastName").value.trim();
+    }
+    
+    function OkButtonClick() {
+        let table = document.getElementById("table");
+        let group = document.getElementById("groupDropdown").value.trim();
+        let firstName = document.getElementById("firstName").value.trim();
+        let lastName = document.getElementById("lastName").value.trim();
     let gender = document.getElementById("genderDropdown").value;
     let birth = document.getElementById("birthday").value.trim();
 
@@ -297,16 +297,18 @@ function updateTable() {
     while (table.rows.length > 1) {
         table.deleteRow(1);
     }
-
-
+    console.log(curPage, curPage - 1, maxStudentsOnPage);
 
     for (let i = (curPage - 1) * maxStudentsOnPage; i < (curPage - 1) * maxStudentsOnPage + maxStudentsOnPage; i++) {
 
+        console.log(i, curPage, curPage - 1, maxStudentsOnPage);
         if (i == students.length)
             break;
         let newRow = table.insertRow();
 
         newRow.insertCell(0).innerHTML = `<input type="checkbox" class="row-checkbox">`;
+        console.log(i);
+        console.log(students[i]);
         newRow.insertCell(1).textContent = students[i].group;
 
         let nameCell = newRow.insertCell(2);
@@ -466,7 +468,7 @@ function openDltModal(newRow, countToDelete) {
 }
 
 function deleteStudentsByIds(ids) {
-    
+
     students = students.filter(student => !ids.includes(student.id.toString()));
 
     fetch("http://localhost:80/delete_students.php", {
@@ -480,19 +482,22 @@ function deleteStudentsByIds(ids) {
         .then(data => {
             if (data.success) {
                 console.log("Deleted students:", ids);
-                // Optionally update UI here
+                updatePaginationButtons(students);
+                console.log(curPage + ' before');
+                if (Math.ceil(students.length / maxStudentsOnPage) < curPage)
+                    curPage = students.length / maxStudentsOnPage;
+
+                if (curPage < 1)
+                    curPage = 1;
+
+                console.log(curPage +'after');
+
+                updateTable();
             } else {
                 console.error("Delete failed:", data.message);
             }
         })
         .catch(err => console.error("Request error:", err));
-
-
-    updatePaginationButtons(students);
-    if(students.length / maxStudentsOnPage < curPage)
-        curPage = students.length / maxStudentsOnPage;
-    updateTable();
-
 }
 
 function closeDltModal() {

@@ -8,21 +8,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$input = file_get_contents("php://input");
-$data = json_decode($input, true);
+if($_SERVER['REQUEST_METHOD'] == 'POST')
+{
+    $input = file_get_contents("php://input");
+    $data = json_decode($input, true);
 
-// Validate
-if (!isset($data["id"])) {
-    echo json_encode(["success" => false, "message" => "Student ID is required"]);
-    exit;
-}
+    if (!isset($data["id"]) || !is_numeric($data["id"]) || $data["id"] <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid student ID"]);
+        exit;
+    }
 
-require_once 'StudentModel.php';
-$model = new StudentModel();
+    if (!isset($data["firstName"]) || !isset($data["lastName"])) {
+        echo json_encode(["success" => false, "message" => "firstName and lastName are required for update"]);
+        exit;
+    }
 
-if ($model->updateStudent($data)) {
-    echo json_encode(["success" => true, "message" => "Student updated", "student" => $data]);
-} else {
-    echo json_encode(["success" => false, "message" => "Failed to update student or student not found"]);
+    $firstName = trim($data["firstName"]);
+    $lastName = trim($data["lastName"]);
+
+    if (empty($firstName) || empty($lastName)) {
+        echo json_encode(["success" => false, "message" => "firstName and lastName cannot be empty"]);
+        exit;
+    }
+
+    if (!preg_match("/^[a-zA-Z\p{Cyrillic}\s'-]+$/u", $firstName) || !preg_match("/^[a-zA-Z\p{Cyrillic}\s'-]+$/u", $lastName)) {
+        echo json_encode(["success" => false, "message" => "firstName and lastName can only contain letters, spaces, hyphens, and apostrophes"]);
+        exit;
+    }
+
+    require_once 'StudentModel.php';
+    $model = new StudentModel();
+
+    if ($model->updateStudent($data)) {
+        echo json_encode(["success" => true, "message" => "Student updated", "student" => $data]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Failed to update student or student not found"]);
+    }
 }
 ?>

@@ -1,35 +1,38 @@
 <?php
-
 header("Access-Control-Allow-Origin: *");
-
 header("Access-Control-Allow-Headers: Content-Type");
-
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(204); // No content
+    http_response_code(204);
     exit;
 }
+
 $input = file_get_contents("php://input");
 $data = json_decode($input, true);
 
-if (!$data || !isset($data["firstName"]) || !isset($data["lastName"])) {
-    echo json_encode(["success" => false, "message" => "Invalid input"]);
+
+$firstName = trim($data["firstName"]);
+$lastName = trim($data["lastName"]);
+
+if (empty($firstName) || empty($lastName)) {
+    echo json_encode(["success" => false, "message" => "Invalid input: firstName and lastName cannot be empty"]);
     exit;
 }
 
-$file = 'students.json';
-$students = [];
-
-if (file_exists($file)) {
-    $students = json_decode(file_get_contents($file), true);
-    if (!is_array($students)) $students = [];
+if (!preg_match("/^[a-zA-Z\p{Cyrillic}\s'-]+$/u", $firstName) || !preg_match("/^[a-zA-Z\p{Cyrillic}\s'-]+$/u", $lastName)) {
+    echo json_encode(["success" => false, "message" => "Invalid input: firstName and lastName can only contain letters, spaces, hyphens, and apostrophes"]);
+    exit;
 }
 
+require_once 'StudentModel.php';
+$model = new StudentModel();
 
-$students[] = $data;
+$savedStudent = $model->saveStudent($data); 
 
-file_put_contents($file, json_encode($students, JSON_PRETTY_PRINT));
-
-echo json_encode(["success" => true, "student" => $data]);
+if ($savedStudent) {
+    echo json_encode(["success" => true, "student" => $savedStudent]);
+} else {
+    echo json_encode(["success" => false, "message" => "Failed to save student"]);
+}
 ?>
