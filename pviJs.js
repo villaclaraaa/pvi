@@ -644,9 +644,13 @@ function TryLogIn() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+
             userLogined = true;
-            localStorage.setItem("userLogined", "true");
-            localStorage.setItem("username", data.username); // Use username from response
+            //localStorage.setItem("userLogined", "true");
+            //localStorage.setItem("username", data.username); // Use username from response
+            sessionStorage.setItem("username", data.username);
+            sessionStorage.setItem("userId", data.userId);
+            console.log("User logged in:", sessionStorage.getItem("username"));
 
             let username = document.getElementById("username");
             username.innerText = data.username;
@@ -669,9 +673,11 @@ function TryLogIn() {
             notification.style.display = "block";
             bell.addEventListener("click", function () {
                 indicator.style.display = "none";
-                window.location.href = "tasksTab.html";
+                 const username = sessionStorage.getItem("username");
+                const userId = sessionStorage.getItem("userId");
+                window.location.href = `http://localhost:3000/messages?username=${encodeURIComponent(username)}&userId=${encodeURIComponent(userId)}`;
             });
-
+            
             bell.addEventListener("mouseover", function () {
                 dropdown.classList.add("show");
                 bell.classList.add("bell-animate");
