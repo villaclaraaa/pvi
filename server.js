@@ -23,7 +23,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/pvi', {
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
-// Define Chat Room Schema
+//Chat Room Schema
 const chatRoomSchema = new mongoose.Schema({
     id: String,
     name: String,
@@ -70,6 +70,13 @@ function generateRoomId() {
 }
 
 app.use(express.static(path.join(__dirname, '/')));
+
+// Route for the Index page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route for the Messages page
 app.get('/messages', (req, res) => {
     res.sendFile(path.join(__dirname, 'messages.html'));
 });
@@ -83,7 +90,7 @@ io.on('connection', (socket) => {
         socket.userId = userId;
         onlineUsers[userId] = true; // Mark the user as online
         console.log(`User ${userId} is online`);
-        io.emit('updateOnlineStatus', onlineUsers); 
+        io.emit('updateOnlineStatus', onlineUsers);
     });
 
     // Handle client disconnect
@@ -91,20 +98,25 @@ io.on('connection', (socket) => {
         if (socket.userId) {
             delete onlineUsers[socket.userId]; // Remove the user from the online list
             console.log(`User ${socket.userId} is offline`);
-            io.emit('updateOnlineStatus', onlineUsers); 
+            io.emit('updateOnlineStatus', onlineUsers);
         }
     });
 
-    // Load chats for a user
     socket.on('loadChats', async (userId) => {
-        const chatRooms = await loadChatsFromDatabase(userId);
-        socket.emit('loadExistingChats', chatRooms);
-    });
+    const chatRooms = await loadChatsFromDatabase(userId);
+    const chatsWithLastMessage = chatRooms.map(chatRoom => ({
+        id: chatRoom.id,
+        name: chatRoom.name,
+        studentIds: chatRoom.studentIds, // Include studentIds
+        lastMessage: chatRoom.messages.length > 0
+            ? chatRoom.messages[chatRoom.messages.length - 1]
+            : { sender: 'System', text: 'No messages yet', timestamp: 0 }
+    }));
+    socket.emit('loadExistingChats', chatsWithLastMessage);
+});
 
-    // Send students to the client
     socket.emit('loadStudents', students);
 
-    // Create a new chat room
     socket.on('createChatRoomWithStudents', async ({ roomName, studentIds, userId }) => {
         const newRoomId = generateRoomId();
 
@@ -143,7 +155,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Join a chat room
     socket.on('joinChatRoom', (roomId) => {
         // Leave all other rooms except the socket's own room
         Array.from(socket.rooms).forEach((room) => {
@@ -157,7 +168,6 @@ io.on('connection', (socket) => {
         console.log(`Socket ${socket.id} joined room ${roomId}`);
     });
 
-    // Handle sending messages
     socket.on('sendMessage', async ({ chatRoomId, message }) => {
         try {
             const chatRoom = await ChatRoom.findOne({ id: chatRoomId });
@@ -166,7 +176,6 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // Add the message to the chat room's messages array
             chatRoom.messages.push(message);
             await chatRoom.save();
 
@@ -203,7 +212,7 @@ io.on('connection', (socket) => {
 
             if (!chatRoom) {
                 console.error('Chat room not found');
-                socket.emit('chatMembersIdsLoaded', []); // Send an empty array if the chat room is not found
+                socket.emit('chatMembersIdsLoaded', []);
                 return;
             }
 
@@ -211,7 +220,7 @@ io.on('connection', (socket) => {
             socket.emit('chatMembersIdsLoaded', chatRoom.studentIds);
         } catch (error) {
             console.error('Error fetching chat members:', error);
-            socket.emit('chatMembersIdsLoaded', []); // Send an empty array in case of an error
+            socket.emit('chatMembersIdsLoaded', []);
         }
     });
 
@@ -255,7 +264,7 @@ io.on('connection', (socket) => {
             }
 
             // Remove members from the chat room
-            const removedMembers = chatRoom.studentIds.filter(id => studentIds.includes(id)); // Only removed members
+            const removedMembers = chatRoom.studentIds.filter(id => studentIds.includes(id));
             chatRoom.studentIds = chatRoom.studentIds.filter(id => !studentIds.includes(id));
             await chatRoom.save();
 
@@ -276,11 +285,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    
+
 });
 
-// Start the Server
 server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-    loadStudents(); // Load students when the server starts
+    console.log(`Server running on http://localhost:${port}`);
+    loadStudents();
 });

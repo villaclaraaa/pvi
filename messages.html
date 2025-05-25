@@ -225,12 +225,74 @@
     #addMemberModal li label {
       margin-left: 5px;
     }
+
+    .notification-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .bell-icon {
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .notification-indicator {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background-color: red;
+      border-radius: 50%;
+      display: none;
+      /* Hidden by default */
+    }
+
+    .notification-dropdown {
+      position: absolute;
+      top: 30px;
+      right: 0;
+      width: 300px;
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+      /* Hidden by default */
+      z-index: 1000;
+    }
+
+    .notification-dropdown.show {
+      display: block;
+    }
+
+    .notification-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification-item strong {
+      display: block;
+      font-weight: bold;
+    }
+
+    .notification-item p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+    }
   </style>
 </head>
 
 <body>
   <header>
     <div><a href="index.html">CMS</a></div>
+
     <div class="right">
       <div class="notification-container">
         <div class="bell-icon" id="notificationBell"><span class="material-symbols-outlined">
@@ -238,24 +300,7 @@
           </span></div>
         <span class="notification-indicator" id="notificationIndicator"></span>
         <div class="notification-dropdown" id="notificationDropdown">
-          <div class="notification-item">
-            <div>
-              <strong>Студент 1</strong>
-              <p>Нове повідомлення</p>
-            </div>
-          </div>
-          <div class="notification-item">
-            <div>
-              <strong>Студент 2</strong>
-              <p>Ще одне повідомлення</p>
-            </div>
-          </div>
-          <div class="notification-item">
-            <div>
-              <strong>Студент 3</strong>
-              <p>Останнє повідомлення</p>
-            </div>
-          </div>
+
         </div>
       </div>
       <div><span class="material-symbols-outlined">
@@ -331,13 +376,13 @@
 
   <div id="loginModal" class="modalLogIn">
     <div class="modal-content-LogIn">
-      <span class="closeLogIn" onclick="closeLogInModal()">&times;</span>
-      <h2>Login</h2>
-      <input type="text" placeholder="Username" id="loginInput" required>
-      <span class="error-message">&nbsp;</span>
-      <input type="password" placeholder="Password" id="passwordInput" required>
-      <span class="error-message">&nbsp;</span>
-      <button type="submit" onclick="TryLogIn()">Log In</button>
+        <span class="closeLogIn" onclick="closeLoginModal()">&times;</span>
+        <h2>Login</h2>
+        <input type="text" placeholder="Username" id="loginInput" required>
+        <span class="error-message">&nbsp;</span>
+        <input type="password" placeholder="Password" id="passwordInput" required>
+        <span class="error-message">&nbsp;</span>
+        <button type="submit" onclick="TryLogin()">Log In</button>
     </div>
   </div>
 
