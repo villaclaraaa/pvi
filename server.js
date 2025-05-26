@@ -37,7 +37,21 @@ const chatRoomSchema = new mongoose.Schema({
     ],
 });
 
+// Offline Notification Schema
+const offlineNotificationSchema = new mongoose.Schema({
+    userId: String,
+    notifications: [{
+        chatRoomId: String,
+        message: {
+            sender: String,
+            text: String,
+            timestamp: { type: Date, default: Date.now }
+        }
+    }]
+});
+
 const ChatRoom = mongoose.model('ChatRoom', chatRoomSchema);
+const OfflineNotification = mongoose.model('OfflineNotification', offlineNotificationSchema);
 
 let students = [];
 
@@ -86,11 +100,27 @@ io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
 
-    socket.on('registerUser', (userId) => {
+    socket.on('registerUser', async (userId) => {
         socket.userId = userId;
-        onlineUsers[userId] = true; // Mark the user as online
+        onlineUsers[userId] = true;
         console.log(`User ${userId} is online`);
         io.emit('updateOnlineStatus', onlineUsers);
+
+        // Check for offline notifications
+        try {
+            const offlineNotifications = await OfflineNotification.findOne({ userId });
+            if (offlineNotifications && offlineNotifications.notifications.length > 0) {
+                // Send stored notifications to the user
+                socket.emit('offlineNotifications', offlineNotifications.notifications);
+                // Clear the notifications
+                await OfflineNotification.findOneAndUpdate(
+                    { userId },
+                    { notifications: [] }
+                );
+            }
+        } catch (error) {
+            console.error('Error handling offline notifications:', error);
+        }
     });
 
     // Handle client disconnect
@@ -99,6 +129,16 @@ io.on('connection', (socket) => {
             delete onlineUsers[socket.userId]; // Remove the user from the online list
             console.log(`User ${socket.userId} is offline`);
             io.emit('updateOnlineStatus', onlineUsers);
+        }
+    });
+
+    // Handle explicit user logout
+    socket.on('userLogout', () => {
+        if (socket.userId) {
+            delete onlineUsers[socket.userId]; // Remove the user from the online list
+            console.log(`User ${socket.userId} logged out`);
+            io.emit('updateOnlineStatus', onlineUsers);
+            socket.userId = null; // Clear the userId from socket
         }
     });
 
@@ -182,8 +222,32 @@ io.on('connection', (socket) => {
             // Emit the new message to all clients in the chat room
             io.to(chatRoomId).emit('newMessage', { chatRoomId, message });
 
-            // Notify all clients about the new message
-            io.emit('newMessageNotification', { chatRoomId, message });
+            // Handle notifications for all members
+            for (const studentId of chatRoom.studentIds) {
+                if (onlineUsers[studentId]) {
+                    // User is online - send real-time notification
+                    const userSocket = Array.from(io.sockets.sockets.values())
+                        .find(s => s.userId === studentId);
+                    if (userSocket) {
+                        userSocket.emit('newMessageNotification', { chatRoomId, message });
+                    }
+                } else {
+                    // User is offline - store notification
+                    try {
+                        await OfflineNotification.findOneAndUpdate(
+                            { userId: studentId },
+                            {
+                                $push: {
+                                    notifications: { chatRoomId, message }
+                                }
+                            },
+                            { upsert: true }
+                        );
+                    } catch (error) {
+                        console.error('Error storing offline notification:', error);
+                    }
+                }
+            }
         } catch (error) {
             console.error('Error saving message:', error);
         }

@@ -27,24 +27,37 @@ document.addEventListener("DOMContentLoaded", function () {
      chatRoomPanel = document.querySelector(".chat-room-panel");
      newChatRoomButton = document.querySelector(".new-chat-button");
 
-    const userId = getUserIdFromQuery();
-    if (userId) {
-        socket.emit('registerUser', userId);
-    }
+    // Get notification elements
+    const notificationIndicator = document.getElementById('notificationIndicator');
+    const bell = document.getElementById('notificationBell');
+    const notificationContainer = bell.closest('.notification-container');
 
-    let username = getUsernameFromQuery();
-    if (username && userId) {
+    // Hide notification elements by default
+    notificationContainer.style.display = 'none';
+    notificationIndicator.style.display = 'none';
+    notificationDropdown.innerHTML = '';
+
+    const userId = getUserIdFromQuery();
+    const username = getUsernameFromQuery();
+
+    if (userId && username) {
+        // User is logged in
         usernameElement.innerText = username;
         loginButton.innerText = "Log out";
         loginButton.onclick = logOut;
-        loadChats(userId); // Load chats if the user is logged in
-        enableChatFeatures(); // Enable chat features
+        socket.emit('registerUser', userId);
+        loadChats(userId);
+        enableChatFeatures();
+        
+        // Show notification container for logged-in users
+        notificationContainer.style.display = 'inline-block';
     } else {
+        // User is logged out
         usernameElement.innerText = "Logged out";
         loginButton.innerText = "Log in";
         loginButton.onclick = openLoginModal;
-        chatListSidebar.innerHTML = ""; // Clear chats if not logged in
-        disableChatFeatures(); // Disable chat features
+        chatListSidebar.innerHTML = "";
+        disableChatFeatures();
     }
 
     const addMemberButton = document.getElementById('addMemberButton');
@@ -88,28 +101,24 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    const bell = document.getElementById('notificationBell');
-    const dropdown = document.getElementById('notificationDropdown');
-
-    // Show the dropdown on hover
+    // Set up notification bell event listeners
     bell.addEventListener('mouseover', () => {
-        dropdown.classList.add('show');
-        bell.classList.remove('bell-animate'); // Stop the bell animation
-        const notificationIndicator = document.getElementById('notificationIndicator');
-        notificationIndicator.style.display = 'none'; // Hide the red circle
+        notificationDropdown.classList.add('show');
+        bell.classList.remove('bell-animate');
+        notificationIndicator.style.display = 'none';
     });
 
     bell.addEventListener('mouseleave', () => {
-        dropdown.classList.remove('show');
+        notificationDropdown.classList.remove('show');
         bell.classList.remove('bell-animate');
     });
 
-    dropdown.addEventListener('mouseover', () => {
-        dropdown.classList.add('show');
+    notificationDropdown.addEventListener('mouseover', () => {
+        notificationDropdown.classList.add('show');
     });
 
-    dropdown.addEventListener('mouseleave', () => {
-        dropdown.classList.remove('show');
+    notificationDropdown.addEventListener('mouseleave', () => {
+        notificationDropdown.classList.remove('show');
     });
 
     // Handle bell click to open the chat room with the new message
@@ -130,11 +139,30 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    
-    
+    // Handle online status updates
+    socket.on('updateOnlineStatus', (onlineUsers) => {
+        console.log('Online users updated:', onlineUsers);
+        const memberList = document.querySelector('.chat-room-members');
+        if (memberList) {
+            const memberItems = memberList.querySelectorAll('li');
+            memberItems.forEach((item) => {
+                const userId = item.dataset.userId;
+                if (onlineUsers[userId]) {
+                    item.classList.add('online');
+                    item.classList.remove('offline');
+                } else {
+                    item.classList.add('offline');
+                    item.classList.remove('online');
+                }
+            });
+        }
+    });
 });
 
 function logOut() {
+        // Notify server about logout
+        socket.emit('userLogout');
+
         sessionStorage.removeItem("username");
         sessionStorage.removeItem("userId");
         usernameElement.innerText = "Logged out";
@@ -142,13 +170,21 @@ function logOut() {
         loginButton.onclick = openLoginModal;
 
         // Clear chats and notifications
-        chatListSidebar.innerHTML = ""; // Clear chats on logout
-        notificationDropdown.innerHTML = ""; // Clear notifications on logout
+        chatListSidebar.innerHTML = "";
+        notificationDropdown.innerHTML = "";
+
+        // Hide and reset notification elements
+        const notificationIndicator = document.getElementById('notificationIndicator');
+        const bell = document.getElementById('notificationBell');
+        const notificationContainer = bell.closest('.notification-container');
+        notificationContainer.style.display = 'none';
+        notificationIndicator.style.display = 'none';
+        bell.classList.remove('bell-animate');
 
         // Clear messages area
         const messagesArea = document.querySelector(".messages-area");
         if (messagesArea) {
-            messagesArea.innerHTML = ""; // Remove all messages
+            messagesArea.innerHTML = "";
         }
 
         // Disable chat features
@@ -227,6 +263,20 @@ function logOut() {
                 usernameElement.innerText = data.username;
                 loginButton.innerText = "Log out";
                 loginButton.onclick = logOut;
+
+                // Register user with socket to receive offline notifications
+                socket.emit('registerUser', data.userId);
+
+                // Show notification container
+                const bell = document.getElementById('notificationBell');
+                const notificationContainer = bell.closest('.notification-container');
+                const notificationIndicator = document.getElementById('notificationIndicator');
+                notificationContainer.style.display = 'inline-block';
+                notificationIndicator.style.display = 'none';
+
+                // Clear existing notifications
+                const notificationDropdown = document.getElementById('notificationDropdown');
+                notificationDropdown.innerHTML = '';
 
                 // Load chats and enable features for the new user
                 loadChats(data.userId);
@@ -482,7 +532,24 @@ function loadChatMembersIds(chatRoomId) {
         if (memberList) {
             memberList.innerHTML = '<strong>Members</strong>'; // Clear existing members
 
-            // Add the "-" button to open the remove member modal
+            // Add each member to the list
+            studentIds.forEach((studentId) => {
+                const student = allStudents.find(s => s.id === studentId);
+                if (student) {
+                    const listItem = document.createElement('li');
+                    listItem.dataset.userId = student.id;
+                    listItem.textContent = `${student.firstName} ${student.lastName}`;
+                    // Set initial online status
+                    if (onlineUsers[student.id]) {
+                        listItem.classList.add('online');
+                    } else {
+                        listItem.classList.add('offline');
+                    }
+                    memberList.appendChild(listItem);
+                }
+            });
+
+            // Add member management buttons
             const removeMemberButton = document.createElement('button');
             removeMemberButton.textContent = '-';
             removeMemberButton.style.cssText = `
@@ -493,11 +560,10 @@ function loadChatMembersIds(chatRoomId) {
                 cursor: pointer;
             `;
             removeMemberButton.addEventListener('click', () => {
-                removeMemberFromChat(); // Open the remove member modal
+                removeMemberFromChat();
             });
             memberList.appendChild(removeMemberButton);
 
-            // Add the "+" button to open the add member modal
             const addMemberButton = document.createElement('button');
             addMemberButton.textContent = '+';
             addMemberButton.style.cssText = `
@@ -508,21 +574,9 @@ function loadChatMembersIds(chatRoomId) {
                 cursor: pointer;
             `;
             addMemberButton.addEventListener('click', () => {
-                addMemberToChat(); // Open the add member modal
+                addMemberToChat();
             });
             memberList.appendChild(addMemberButton);
-
-            // Add each member to the list
-            studentIds.forEach((studentId) => {
-                const student = allStudents.find(s => s.id === studentId);
-                if (student) {
-                    const listItem = document.createElement('li');
-                    listItem.dataset.userId = student.id;
-                    listItem.textContent = `${student.firstName} ${student.lastName}`;
-                    listItem.classList.add(onlineUsers[student.id] ? 'online' : 'offline');
-                    memberList.appendChild(listItem);
-                }
-            });
         }
     });
 }
@@ -957,3 +1011,46 @@ function updateNotificationDropdown() {
         dropdown.appendChild(notificationItem);
     });
 }
+
+// Listen for offline notifications when user comes online
+socket.on('offlineNotifications', (notifications) => {
+    console.log('Received offline notifications:', notifications);
+    
+    // Sort notifications by timestamp if available
+    const sortedNotifications = notifications.sort((a, b) => {
+        const aTime = a.message.timestamp ? new Date(a.message.timestamp) : new Date(0);
+        const bTime = b.message.timestamp ? new Date(b.message.timestamp) : new Date(0);
+        return bTime - aTime;
+    });
+
+    // Keep only the last 3 notifications
+    const recentNotifications = sortedNotifications.slice(0, 3);
+
+    // Update the notification dropdown with offline messages
+    const dropdown = document.getElementById('notificationDropdown');
+    recentNotifications.forEach(({ chatRoomId, message }) => {
+        // Find the chat name
+        const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
+        const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
+
+        let notificationItem = document.createElement('div');
+        notificationItem.className = 'notification-item';
+        notificationItem.dataset.roomId = chatRoomId;
+        notificationItem.innerHTML = `
+            <strong>${chatName}</strong>
+            <p>${message.sender}: ${message.text}</p>
+        `;
+        notificationItem.addEventListener('click', () => {
+            switchChatRoom(chatRoomId);
+        });
+        dropdown.appendChild(notificationItem);
+    });
+
+    // If there are any notifications, show the notification indicator
+    if (recentNotifications.length > 0) {
+        const notificationIndicator = document.getElementById('notificationIndicator');
+        const bell = document.getElementById('notificationBell');
+        notificationIndicator.style.display = 'block';
+        bell.classList.add('bell-animate');
+    }
+});
