@@ -628,86 +628,59 @@ function closeLogInModal() {
     }, 500); // Must match CSS transition time (0.5s)
 }
 
-function TryLogIn() {
-    let login = document.getElementById("loginInput").value.trim();
-    let password = document.getElementById("passwordInput").value.trim();
+function TryLogin() {
+    let login = document.getElementById("loginInput").value;
+    let password = document.getElementById("passwordInput").value;
+
     let loginInput = document.getElementById("loginInput");
     let passwordInput = document.getElementById("passwordInput");
-    clearError(passwordInput);
-    clearError(loginInput);
 
-    fetch('http://localhost:80/login.php', { // Send to login.php
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: login, password: password })
+    fetch("http://localhost/login.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password }),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                userLogined = true;
+                localStorage.setItem("userLogined", "true");
+                localStorage.setItem("username", data.username);
+                sessionStorage.setItem("username", data.username);
+                sessionStorage.setItem("userId", data.userId);
+                console.log(sessionStorage.getItem("username"));
+                console.log(sessionStorage.getItem("userId"));
 
-            userLogined = true;
-            //localStorage.setItem("userLogined", "true");
-            //localStorage.setItem("username", data.username); // Use username from response
-            sessionStorage.setItem("username", data.username);
-            sessionStorage.setItem("userId", data.userId);
-            console.log("User logged in:", sessionStorage.getItem("username"));
+                let username = document.getElementById("username");
+                username.innerText = data.username;
 
-            let username = document.getElementById("username");
-            username.innerText = data.username;
-            let loginbutton = document.getElementById("loginbutton");
-            loginbutton.innerText = "Log out";
-            loginbutton.onclick = LogOut;
+                let loginbutton = document.getElementById("loginbutton");
+                loginbutton.innerText = "Log out";
+                loginbutton.onclick = LogOut;
 
-            for (let i = 0; i < students.length; i++) {
-                if (students[i].firstName + " " + students[i].lastName == username.innerText) {
-                    students[i].status = "online";
+                for (let i = 0; i < students.length; i++) {
+                    if (students[i].firstName + " " + students[i].lastName == data.username) {
+                        students[i].status = "online";
+                    }
                 }
-        
+
+                updateTable();
+                closeLogInModal();
+
+                // Show notification container and initialize notifications
+                const notificationContainer = document.querySelector('.notification-container');
+                if (notificationContainer) {
+                    notificationContainer.style.display = 'inline-block';
+                    initializeNotificationsAfterLogin(data.userId);
+                }
+            } else {
+                if (data.message === "Wrong password") {
+                    showError(passwordInput, "Wrong password");
+                } else if (data.message === "Wrong login") {
+                    showError(loginInput, "Wrong login!");
+                }
             }
-
-            // ... (Rest of your UI update logic, including notification bell)
-            let bell = document.getElementById("notificationBell");
-            let indicator = document.getElementById("notificationIndicator");
-            let dropdown = document.getElementById("notificationDropdown");
-            let notification = document.getElementById("notificationIndicator");
-            notification.style.display = "block";
-            bell.addEventListener("click", function () {
-                indicator.style.display = "none";
-                 const username = sessionStorage.getItem("username");
-                const userId = sessionStorage.getItem("userId");
-                window.location.href = `http://localhost:3000/messages?username=${encodeURIComponent(username)}&userId=${encodeURIComponent(userId)}`;
-            });
-            
-            bell.addEventListener("mouseover", function () {
-                dropdown.classList.add("show");
-                bell.classList.add("bell-animate");
-                notification.style.display = "none";
-            });
-
-            bell.addEventListener("mouseleave", function () {
-                dropdown.classList.remove("show");
-                bell.classList.remove("bell-animate");
-            });
-
-            dropdown.addEventListener("mouseover", function () {
-                dropdown.classList.add("show");
-            });
-
-            dropdown.addEventListener("mouseleave", function () {
-                dropdown.classList.remove("show");
-            });
-
-            closeLogInModal();
-            updateTable();
-
-        } else {
-            if (data.message === "Wrong password") {
-                showError(passwordInput, "Wrong password");
-            } else if (data.message === "Wrong login") {
-                showError(loginInput, "Wrong login!");
-            } 
-        }
-    });
+        });
 }
     
 
@@ -722,8 +695,8 @@ function LogOut() {
         if (students[i].firstName + " " + students[i].lastName == username.innerText) {
             students[i].status = "offline";
         }
-
     }
+
     let loginbutton = document.getElementById("loginbutton");
     loginbutton.innerText = "Log in";
     username.innerText = "Logged out";
@@ -731,20 +704,19 @@ function LogOut() {
     updateTable();
     loginbutton.onclick = OpenLogInModal;
 
-
-
-    let bell = document.getElementById("notificationBell");
-    let dropdown = document.getElementById("notificationDropdown");
-
-    let newBell = bell.cloneNode(true);
-    bell.parentNode.replaceChild(newBell, bell);
-
-    let newDropdown = dropdown.cloneNode(true);
-    dropdown.parentNode.replaceChild(newDropdown, dropdown);
-
-    let notification = document.getElementById("notificationIndicator");
-    notification.style.display = "none";
-
+    // Hide notification container and clear notifications
+    const notificationContainer = document.querySelector('.notification-container');
+    if (notificationContainer) {
+        notificationContainer.style.display = 'none';
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        if (notificationDropdown) {
+            notificationDropdown.innerHTML = '';
+        }
+        const notificationIndicator = document.getElementById('notificationIndicator');
+        if (notificationIndicator) {
+            notificationIndicator.style.display = 'none';
+        }
+    }
 }
 
 async function loadStudents() {

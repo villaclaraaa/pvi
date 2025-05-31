@@ -108,17 +108,27 @@ document.addEventListener("DOMContentLoaded", function () {
         notificationIndicator.style.display = 'none';
     });
 
+    let closeTimeout;
+
     bell.addEventListener('mouseleave', () => {
-        notificationDropdown.classList.remove('show');
-        bell.classList.remove('bell-animate');
+        closeTimeout = setTimeout(() => {
+            notificationDropdown.classList.remove('show');
+            bell.classList.remove('bell-animate');
+        }, 500);
     });
 
     notificationDropdown.addEventListener('mouseover', () => {
+        if (closeTimeout) {
+            clearTimeout(closeTimeout);
+            closeTimeout = null;
+        }
         notificationDropdown.classList.add('show');
     });
 
     notificationDropdown.addEventListener('mouseleave', () => {
-        notificationDropdown.classList.remove('show');
+        closeTimeout = setTimeout(() => {
+            notificationDropdown.classList.remove('show');
+        }, 500);
     });
 
     // Handle bell click to open the chat room with the new message
