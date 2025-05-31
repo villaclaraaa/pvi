@@ -337,13 +337,32 @@ io.on('connection', (socket) => {
             // Notify all clients in the room
             io.to(chatRoomId).emit('chatRoomUpdated', chatRoom);
 
-            // Notify removed members
-            removedMembers.forEach(memberId => {
-                const memberSocket = Array.from(io.sockets.sockets.values()).find(socket => socket.userId === memberId);
-                if (memberSocket) {
-                    memberSocket.emit('chatRoomRemoved', { chatRoomId });
+            // Clean up notifications for removed members
+            for (const memberId of removedMembers) {
+                try {
+                    // Remove any stored offline notifications for this chat room
+                    await OfflineNotification.updateMany(
+                        { userId: memberId },
+                        { $pull: { notifications: { chatRoomId: chatRoomId } } }
+                    );
+
+                    // Notify the removed member's socket
+                    const memberSocket = Array.from(io.sockets.sockets.values())
+                        .find(socket => socket.userId === memberId);
+                    if (memberSocket) {
+                        memberSocket.emit('chatRoomRemoved', { chatRoomId });
+                        memberSocket.leave(chatRoomId); // Remove from socket room
+                    }
+                } catch (error) {
+                    console.error(`Error cleaning up notifications for member ${memberId}:`, error);
                 }
-            });
+            }
+
+            // If the chat room is empty (no members left), delete it
+            if (chatRoom.studentIds.length === 0) {
+                await ChatRoom.deleteOne({ id: chatRoomId });
+                console.log(`Empty chat room ${chatRoomId} deleted`);
+            }
         } catch (error) {
             console.error('Error removing members from chat room:', error);
         }

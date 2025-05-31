@@ -94,8 +94,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     text: messageText,
                 };
                 socket.emit('sendMessage', { chatRoomId: currentChatRoomId, message });
-                //displayMessage(message);
-                console.log('Message sent:', message);
+
+                // Update lastMessages array with the current chat
+                const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${currentChatRoomId}"]`);
+                const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
+                
+                const existingMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === currentChatRoomId);
+                const newMessage = {
+                    chatRoomId: currentChatRoomId,
+                    chatName,
+                    message
+                };
+
+                if (existingMessageIndex !== -1) {
+                    // If chat exists in lastMessages, update it and move to front
+                    lastMessages.splice(existingMessageIndex, 1);
+                    lastMessages.unshift(newMessage);
+                } else {
+                    // If chat doesn't exist, add to front and remove oldest
+                    lastMessages.unshift(newMessage);
+                    if (lastMessages.length > 3) {
+                        lastMessages.pop(); // Remove the oldest message
+                    }
+                }
+
+                // Update the notification dropdown
+                updateNotificationDropdown();
+
                 messageInput.value = '';
             }
         });
@@ -505,8 +530,60 @@ socket.on('newChatRoom', (room) => {
     }
 });
 
-socket.on('chatRoomRemoved', ({ chatRoomId }) => {
+async function loadNextRecentChat() {
+    // Get all chat rooms from the sidebar
+    const chatListItems = document.querySelectorAll('.chat-list-item');
+    const currentChatIds = new Set(lastMessages.map(msg => msg.chatRoomId));
+    
+    // Find the first chat that's not already in lastMessages
+    for (const chatItem of chatListItems) {
+        const chatRoomId = chatItem.dataset.roomId;
+        if (!currentChatIds.has(chatRoomId)) {
+            // Found a chat that's not in notifications
+            return {
+                chatRoomId: chatRoomId,
+                chatName: chatItem.textContent.trim(),
+                message: { sender: 'System', text: 'No recent messages' }
+            };
+        }
+    }
+    return null;
+}
+
+socket.on('chatRoomRemoved', async ({ chatRoomId }) => {
     console.log('Chat room removed:', chatRoomId);
+    
+    // If this is the currently open chat room, clear everything
+    if (chatRoomId === currentChatRoomId) {
+        // Reset chat room title
+        const chatRoomHeader = document.querySelector('.chat-room-header h3');
+        if (chatRoomHeader) {
+            chatRoomHeader.innerText = "Select a chat room";
+        }
+
+        // Clear messages area
+        const messagesArea = document.querySelector('.messages-area');
+        if (messagesArea) {
+            messagesArea.innerHTML = "";
+        }
+
+        // Clear members list
+        const memberList = document.querySelector('.chat-room-members');
+        if (memberList) {
+            memberList.innerHTML = "<strong>Members</strong>";
+        }
+
+        // Clear message input
+        const messageInput = document.querySelector('.message-input');
+        if (messageInput) {
+            messageInput.value = "";
+        }
+
+        // Reset current chat room ID
+        currentChatRoomId = null;
+    }
+
+    // Remove the chat from sidebar
     const chatListSidebar = document.querySelector('.chat-list-sidebar ul');
     if (chatListSidebar) {
         const listItem = chatListSidebar.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
@@ -515,6 +592,22 @@ socket.on('chatRoomRemoved', ({ chatRoomId }) => {
             console.log('Chat room removed from sidebar:', chatRoomId);
         }
     }
+
+    // Check if the removed chat was in lastMessages
+    const removedMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === chatRoomId);
+    if (removedMessageIndex !== -1) {
+        // Remove the chat from lastMessages
+        lastMessages.splice(removedMessageIndex, 1);
+        
+        // Try to find a new chat to add to notifications
+        const nextChat = await loadNextRecentChat();
+        if (nextChat) {
+            lastMessages.push(nextChat);
+        }
+    }
+
+    // Update the notification dropdown
+    updateNotificationDropdown();
 });
 
 // Listen for new messages
@@ -593,38 +686,37 @@ function loadChatMembersIds(chatRoomId) {
 
 socket.on('newMessageNotification', ({ chatRoomId, message }) => {
     const dropdown = document.getElementById('notificationDropdown');
-    let notificationItem = dropdown.querySelector(`.notification-item[data-room-id="${chatRoomId}"]`);
 
     // Find the chat name
     const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
     const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
 
-    // Update the content of the notification item
-    if (!notificationItem) {
-        // If the chat is not already in the dropdown, create a new notification item
-        notificationItem = document.createElement('div');
-        notificationItem.className = 'notification-item';
-        notificationItem.dataset.roomId = chatRoomId;
-        notificationItem.addEventListener('click', () => {
-            switchChatRoom(chatRoomId);
-        });
-        dropdown.appendChild(notificationItem);
+    // Update lastMessages array
+    const existingMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === chatRoomId);
+    const newMessage = {
+        chatRoomId,
+        chatName,
+        message
+    };
+
+    if (existingMessageIndex !== -1) {
+        // If chat exists in lastMessages, update it and move to front
+        lastMessages.splice(existingMessageIndex, 1);
+        lastMessages.unshift(newMessage);
+    } else {
+        // If chat doesn't exist, add to front and maintain max 3 items
+        lastMessages.unshift(newMessage);
+        if (lastMessages.length > 3) {
+            lastMessages.pop(); // Remove the oldest message
+        }
     }
 
-    notificationItem.innerHTML = `
-        <strong>${chatName}</strong>
-        <p>${message.sender}: ${message.text}</p>
-    `;
+    // Update the notification dropdown with the new lastMessages
+    updateNotificationDropdown();
 
     // If the user is already in the chat room, stop further processing
     if (chatRoomId === currentChatRoomId) {
         return;
-    }
-
-    // Ensure the dropdown contains only the last three messages
-    const notificationItems = dropdown.querySelectorAll('.notification-item');
-    if (notificationItems.length > 3) {
-        dropdown.removeChild(notificationItems[0]); // Remove the oldest notification
     }
 
     // Show the notification indicator and start the bell animation
@@ -1001,7 +1093,7 @@ function updateNotificationDropdown() {
     // Clear the dropdown
     dropdown.innerHTML = '';
 
-    // Add each chat in the lastMessages array to the dropdown
+    // Add each chat in the lastMessages array to the dropdown (they're already in correct order)
     lastMessages.forEach(({ chatRoomId, chatName, message }) => {
         let notificationItem = document.createElement('div');
         notificationItem.className = 'notification-item';
