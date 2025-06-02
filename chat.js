@@ -2,12 +2,26 @@ const socket = io('http://localhost:3000');
 
 
 function getUsernameFromQuery() {
+    const storedUsername = sessionStorage.getItem("username");
+    if (storedUsername) return storedUsername;
+    
     const params = new URLSearchParams(window.location.search);
-    return params.get("username");
+    const username = params.get("username");
+    if (username) {
+        sessionStorage.setItem("username", username);
+    }
+    return username;
 }
 function getUserIdFromQuery() {
+    const storedUserId = sessionStorage.getItem("userId");
+    if (storedUserId) return storedUserId;
+    
     const params = new URLSearchParams(window.location.search);
-    return params.get("userId");
+    const userId = params.get("userId");
+    if (userId) {
+        sessionStorage.setItem("userId", userId);
+    }
+    return userId;
 }
 
 let lastMessages = [];
@@ -53,6 +67,8 @@ document.addEventListener("DOMContentLoaded", function () {
         notificationContainer.style.display = 'inline-block';
     } else {
         // User is logged out
+        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("userId");
         usernameElement.innerText = "Logged out";
         loginButton.innerText = "Log in";
         loginButton.onclick = openLoginModal;
@@ -95,6 +111,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 };
                 socket.emit('sendMessage', { chatRoomId: currentChatRoomId, message });
 
+                // Clear message input immediately after sending
+                messageInput.value = '';
+
                 // Update lastMessages array with the current chat
                 const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${currentChatRoomId}"]`);
                 const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
@@ -107,21 +126,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 };
 
                 if (existingMessageIndex !== -1) {
-                    // If chat exists in lastMessages, update it and move to front
+                    // If chat exists, remove it
                     lastMessages.splice(existingMessageIndex, 1);
-                    lastMessages.unshift(newMessage);
-                } else {
-                    // If chat doesn't exist, add to front and remove oldest
-                    lastMessages.unshift(newMessage);
-                    if (lastMessages.length > 3) {
-                        lastMessages.pop(); // Remove the oldest message
-                    }
+                }
+
+                // Add new message to start and maintain max size
+                lastMessages.unshift(newMessage);
+                if (lastMessages.length > 3) {
+                    lastMessages.pop();
                 }
 
                 // Update the notification dropdown
                 updateNotificationDropdown();
-
-                messageInput.value = '';
             }
         });
     }
@@ -195,36 +211,37 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function logOut() {
-        // Notify server about logout
-        socket.emit('userLogout');
+    socket.emit('userLogout');
 
-        sessionStorage.removeItem("username");
-        sessionStorage.removeItem("userId");
-        usernameElement.innerText = "Logged out";
-        loginButton.innerText = "Log in";
-        loginButton.onclick = openLoginModal;
+    // Clear session storage
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("userId");
+    
+    usernameElement.innerText = "Logged out";
+    loginButton.innerText = "Log in";
+    loginButton.onclick = openLoginModal;
 
-        // Clear chats and notifications
-        chatListSidebar.innerHTML = "";
-        notificationDropdown.innerHTML = "";
+    // Clear chats and notifications
+    chatListSidebar.innerHTML = "";
+    notificationDropdown.innerHTML = "";
 
-        // Hide and reset notification elements
-        const notificationIndicator = document.getElementById('notificationIndicator');
-        const bell = document.getElementById('notificationBell');
-        const notificationContainer = bell.closest('.notification-container');
-        notificationContainer.style.display = 'none';
-        notificationIndicator.style.display = 'none';
-        bell.classList.remove('bell-animate');
+    // Hide and reset notification elements
+    const notificationIndicator = document.getElementById('notificationIndicator');
+    const bell = document.getElementById('notificationBell');
+    const notificationContainer = bell.closest('.notification-container');
+    notificationContainer.style.display = 'none';
+    notificationIndicator.style.display = 'none';
+    bell.classList.remove('bell-animate');
 
-        // Clear messages area
-        const messagesArea = document.querySelector(".messages-area");
-        if (messagesArea) {
-            messagesArea.innerHTML = "";
-        }
-
-        // Disable chat features
-        disableChatFeatures();
+    // Clear messages area
+    const messagesArea = document.querySelector(".messages-area");
+    if (messagesArea) {
+        messagesArea.innerHTML = "";
     }
+
+    // Disable chat features
+    disableChatFeatures();
+}
 
     function openLoginModal() {
         const loginModal = document.getElementById("loginModal");
@@ -289,18 +306,15 @@ function logOut() {
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
-                // Reset the page to its initial state
                 resetMessagesPage();
 
-                // Set new user data
+                // Set new user data in session storage
                 sessionStorage.setItem("username", data.username);
                 sessionStorage.setItem("userId", data.userId);
+                
                 usernameElement.innerText = data.username;
                 loginButton.innerText = "Log out";
                 loginButton.onclick = logOut;
-
-                // Register user with socket to receive offline notifications
-                socket.emit('registerUser', data.userId);
 
                 // Show notification container
                 const bell = document.getElementById('notificationBell');
@@ -312,6 +326,9 @@ function logOut() {
                 // Clear existing notifications
                 const notificationDropdown = document.getElementById('notificationDropdown');
                 notificationDropdown.innerHTML = '';
+
+                // Register user with socket to receive offline notifications
+                socket.emit('registerUser', data.userId);
 
                 // Load chats and enable features for the new user
                 loadChats(data.userId);
@@ -368,37 +385,140 @@ function logOut() {
         socket.emit("loadChats", userId);
     }
 
+
     // Listen for chats loaded from the server
     socket.on("loadExistingChats", (chats) => {
         // Sort chats by the timestamp of their last message in descending order
-        const sortedChats = chats.sort((a, b) => {
-            const aTimestamp = a.lastMessage?.timestamp || 0;
-            const bTimestamp = b.lastMessage?.timestamp || 0;
-            return bTimestamp - aTimestamp;
-        });
+        console.log("chats before sorting", chats);
+        
+        // Bubble sort implementation
+        const sortedChats = [...chats]; // Create a copy of the array
+        for(let i = 0; i < sortedChats.length; i++) {
+            for(let j = 0; j < sortedChats.length - i - 1; j++) {
+                const timestamp1 = sortedChats[j].lastMessage?.timestamp || 0;
+                const timestamp2 = sortedChats[j + 1].lastMessage?.timestamp || 0;
+                if(timestamp1 < timestamp2) {
+                    // Swap elements
+                    const temp = sortedChats[j];
+                    sortedChats[j] = sortedChats[j + 1];
+                    sortedChats[j + 1] = temp;
+                }
+            }
+        }
+        
+        console.log("sorted chats", sortedChats);
+        // Update the chat list sidebar first
+        const chatListSidebar = document.querySelector('.chat-list-sidebar ul');
+        if (chatListSidebar) {
+            chatListSidebar.innerHTML = ''; // Clear existing list
 
-        lastMessages = sortedChats.slice(0, 3).map(chat => ({
-        chatRoomId: chat.id,
-        chatName: chat.name,
-        message: chat.lastMessage || { sender: 'System', text: 'No messages yet' }
-    }));
-        // Get the top three chats
-        const newestChats = sortedChats.slice(0, 3);
-
-        // Populate the notification dropdown
-        notificationDropdown.innerHTML = ""; // Clear existing notifications
-        newestChats.forEach((chat) => {
-            const notificationItem = document.createElement("div");
-            notificationItem.className = "notification-item";
-            notificationItem.innerHTML = `
-                    <strong>${chat.name}</strong>
-                    <p>${chat.lastMessage?.sender || "System"}: ${chat.lastMessage?.text || "No messages yet"}</p>
-                `;
-            notificationItem.addEventListener("click", () => {
-                switchChatRoom(chat.id); // Open the chat room when clicked
+            chats.forEach(chat => {
+                const listItem = document.createElement('li');
+                listItem.className = 'chat-list-item';
+                listItem.dataset.roomId = chat.id;
+                listItem.innerHTML = `<div class="user-icon"></div>${chat.name}`;
+                listItem.addEventListener('click', () => {
+                    switchChatRoom(chat.id);
+                });
+                chatListSidebar.appendChild(listItem);
             });
-            notificationDropdown.appendChild(notificationItem);
+        }
+
+        // Only add new chats to lastMessages if there's room for more
+        if (lastMessages.length < 3) {
+            // Get set of existing chat room IDs
+            const existingChatIds = new Set(lastMessages.map(msg => msg.chatRoomId));
+            
+            // Add recent chats that aren't already in lastMessages
+            sortedChats.some(chat => {
+                if (lastMessages.length < 3 && !existingChatIds.has(chat.id)) {
+                    lastMessages.push({
+                        chatRoomId: chat.id,
+                        chatName: chat.name,
+                        message: chat.lastMessage || { sender: 'System', text: 'No messages yet' }
+                    });
+                }
+                return lastMessages.length >= 3;
+            });
+        }
+
+        // Update the notification dropdown with recent chats
+        // This will be updated again if there are offline notifications
+        console.log("recent chats", lastMessages);
+        updateNotificationDropdown();
+    });
+
+    // Function to get chat name by ID from database
+    async function getChatNameById(chatRoomId) {
+        console.log("getting name by id", chatRoomId);
+        return new Promise((resolve) => {
+            socket.emit('getChatName', chatRoomId);
+            socket.once(`chatName:${chatRoomId}`, (chatName) => {
+                resolve(chatName || 'Unknown Chat');
+            });
         });
+    }
+
+    // Listen for offline notifications separately
+    socket.on('offlineNotifications', async (notifications) => {
+        console.log("offline notifications", notifications);
+        if (notifications && notifications.length > 0) {
+            // Sort offline notifications using bubble sort to match other sorting implementations
+            const sortedNotifications = [...notifications]; // Create a copy of the array
+            for(let i = 0; i < sortedNotifications.length; i++) {
+                for(let j = 0; j < sortedNotifications.length - i - 1; j++) {
+                    const timestamp1 = sortedNotifications[j].message?.timestamp || 0;
+                    const timestamp2 = sortedNotifications[j + 1].message?.timestamp || 0;
+                    if(timestamp1 < timestamp2) {
+                        // Swap elements
+                        const temp = sortedNotifications[j];
+                        sortedNotifications[j] = sortedNotifications[j + 1];
+                        sortedNotifications[j + 1] = temp;
+                    }
+                }
+            }
+
+            // Reset lastMessages and add offline notifications first
+            console.log("last messages", lastMessages);
+            
+            // Process notifications sequentially to maintain order
+            for (const { chatRoomId, message } of sortedNotifications) {
+                const chatName = await getChatNameById(chatRoomId);
+                console.log(chatName);
+                // Create the new message object
+                const newMessage = {
+                    chatRoomId,
+                    chatName,
+                    message
+                };
+
+                // Check if this chat already exists in lastMessages
+                const existingIndex = lastMessages.findIndex(msg => msg.chatRoomId === chatRoomId);
+                
+                if (existingIndex !== -1) {
+                    // If chat exists, update it and move to front
+                    lastMessages.splice(existingIndex, 1);
+                    lastMessages.unshift(newMessage);
+                } else {
+                    // If chat doesn't exist, add to front and remove oldest if needed
+                    lastMessages.unshift(newMessage);
+                    if (lastMessages.length > 3) {
+                        lastMessages.pop();
+                    }
+                    console.log("in else", lastMessages);
+                }
+            }
+
+            console.log("all messages notifications", lastMessages);
+            // Update the notification dropdown
+            updateNotificationDropdown();
+
+            // Show notification indicator
+            const notificationIndicator = document.getElementById('notificationIndicator');
+            const bell = document.getElementById('notificationBell');
+            notificationIndicator.style.display = 'block';
+            bell.classList.add('bell-animate');
+        }
     });
 
     function showError(input, message) {
@@ -700,15 +820,14 @@ socket.on('newMessageNotification', ({ chatRoomId, message }) => {
     };
 
     if (existingMessageIndex !== -1) {
-        // If chat exists in lastMessages, update it and move to front
+        // If chat exists, remove it
         lastMessages.splice(existingMessageIndex, 1);
-        lastMessages.unshift(newMessage);
-    } else {
-        // If chat doesn't exist, add to front and maintain max 3 items
-        lastMessages.unshift(newMessage);
-        if (lastMessages.length > 3) {
-            lastMessages.pop(); // Remove the oldest message
-        }
+    }
+
+    // Add new message to start and maintain max size
+    lastMessages.unshift(newMessage);
+    if (lastMessages.length > 3) {
+        lastMessages.pop();
     }
 
     // Update the notification dropdown with the new lastMessages
@@ -722,8 +841,8 @@ socket.on('newMessageNotification', ({ chatRoomId, message }) => {
     // Show the notification indicator and start the bell animation
     const notificationIndicator = document.getElementById('notificationIndicator');
     const bell = document.getElementById('notificationBell');
-    notificationIndicator.style.display = 'block'; // Show the red circle
-    bell.classList.add('bell-animate'); // Start the bell animation
+    notificationIndicator.style.display = 'block';
+    bell.classList.add('bell-animate');
 
     // Store the chatRoomId and message for when the bell is clicked
     bell.dataset.chatRoomId = chatRoomId;
@@ -1088,12 +1207,15 @@ socket.on('updateOnlineStatus', (updatedOnlineUsers) => {
 
 
 function updateNotificationDropdown() {
-    const dropdown = document.getElementById('notificationDropdown');
+    console.log("lastMessages updating notification dropdown", lastMessages);
+    const oldDropdown = document.getElementById('notificationDropdown');
+    
+    // Create new dropdown
+    const newDropdown = document.createElement('div');
+    newDropdown.id = 'notificationDropdown';
+    newDropdown.className = oldDropdown.className;
 
-    // Clear the dropdown
-    dropdown.innerHTML = '';
-
-    // Add each chat in the lastMessages array to the dropdown (they're already in correct order)
+    // Add each chat in the lastMessages array to the new dropdown
     lastMessages.forEach(({ chatRoomId, chatName, message }) => {
         let notificationItem = document.createElement('div');
         notificationItem.className = 'notification-item';
@@ -1110,49 +1232,47 @@ function updateNotificationDropdown() {
             notificationIndicator.style.display = 'none'; // Hide the red circle
         });
 
-        dropdown.appendChild(notificationItem);
+        newDropdown.appendChild(notificationItem);
     });
+
+    // Add mouseover/mouseleave event listeners
+    let closeTimeout;
+    
+    newDropdown.addEventListener('mouseover', () => {
+        if (closeTimeout) {
+            clearTimeout(closeTimeout);
+            closeTimeout = null;
+        }
+        newDropdown.classList.add('show');
+    });
+
+    newDropdown.addEventListener('mouseleave', () => {
+        closeTimeout = setTimeout(() => {
+            newDropdown.classList.remove('show');
+        }, 500);
+    });
+
+    // Replace old dropdown with new one
+    oldDropdown.parentNode.replaceChild(newDropdown, oldDropdown);
+
+    // Re-add bell event listeners
+    const bell = document.getElementById('notificationBell');
+    if (bell) {
+        bell.addEventListener('mouseover', () => {
+            newDropdown.classList.add('show');
+            bell.classList.remove('bell-animate');
+            const notificationIndicator = document.getElementById('notificationIndicator');
+            if (notificationIndicator) {
+                notificationIndicator.style.display = 'none';
+            }
+        });
+
+        bell.addEventListener('mouseleave', () => {
+            closeTimeout = setTimeout(() => {
+                newDropdown.classList.remove('show');
+                bell.classList.remove('bell-animate');
+            }, 500);
+        });
+    }
 }
 
-// Listen for offline notifications when user comes online
-socket.on('offlineNotifications', (notifications) => {
-    console.log('Received offline notifications:', notifications);
-    
-    // Sort notifications by timestamp if available
-    const sortedNotifications = notifications.sort((a, b) => {
-        const aTime = a.message.timestamp ? new Date(a.message.timestamp) : new Date(0);
-        const bTime = b.message.timestamp ? new Date(b.message.timestamp) : new Date(0);
-        return bTime - aTime;
-    });
-
-    // Keep only the last 3 notifications
-    const recentNotifications = sortedNotifications.slice(0, 3);
-
-    // Update the notification dropdown with offline messages
-    const dropdown = document.getElementById('notificationDropdown');
-    recentNotifications.forEach(({ chatRoomId, message }) => {
-        // Find the chat name
-        const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
-        const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
-
-        let notificationItem = document.createElement('div');
-        notificationItem.className = 'notification-item';
-        notificationItem.dataset.roomId = chatRoomId;
-        notificationItem.innerHTML = `
-            <strong>${chatName}</strong>
-            <p>${message.sender}: ${message.text}</p>
-        `;
-        notificationItem.addEventListener('click', () => {
-            switchChatRoom(chatRoomId);
-        });
-        dropdown.appendChild(notificationItem);
-    });
-
-    // If there are any notifications, show the notification indicator
-    if (recentNotifications.length > 0) {
-        const notificationIndicator = document.getElementById('notificationIndicator');
-        const bell = document.getElementById('notificationBell');
-        notificationIndicator.style.display = 'block';
-        bell.classList.add('bell-animate');
-    }
-});

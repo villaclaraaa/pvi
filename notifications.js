@@ -89,9 +89,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to update notification dropdown
 function updateNotificationDropdown() {
-    const dropdown = document.getElementById('notificationDropdown');
-    dropdown.innerHTML = ''; // Clear existing notifications
+    const oldDropdown = document.getElementById('notificationDropdown');
+    
+    // Create new dropdown
+    const newDropdown = document.createElement('div');
+    newDropdown.id = 'notificationDropdown';
+    newDropdown.className = oldDropdown.className;
 
+    // Add each chat in the lastMessages array to the new dropdown
+    // Insert at the beginning of the dropdown to maintain newest-first order
     lastMessages.forEach(({ chatRoomId, chatName, message }) => {
         const notificationItem = document.createElement('div');
         notificationItem.className = 'notification-item';
@@ -111,8 +117,53 @@ function updateNotificationDropdown() {
                 window.location.href = `messages.html?username=${encodeURIComponent(username)}&userId=${encodeURIComponent(userId)}&chatRoomId=${chatRoomId}`;
             }
         });
-        dropdown.appendChild(notificationItem);
+        // Insert at the beginning instead of appending
+        if (newDropdown.firstChild) {
+            newDropdown.insertBefore(notificationItem, newDropdown.firstChild);
+        } else {
+            newDropdown.appendChild(notificationItem);
+        }
     });
+
+    // Add mouseover/mouseleave event listeners
+    let closeTimeout;
+    
+    newDropdown.addEventListener('mouseover', () => {
+        if (closeTimeout) {
+            clearTimeout(closeTimeout);
+            closeTimeout = null;
+        }
+        newDropdown.classList.add('show');
+    });
+
+    newDropdown.addEventListener('mouseleave', () => {
+        closeTimeout = setTimeout(() => {
+            newDropdown.classList.remove('show');
+        }, 500);
+    });
+
+    // Replace old dropdown with new one
+    oldDropdown.parentNode.replaceChild(newDropdown, oldDropdown);
+
+    // Re-add bell event listeners
+    const bell = document.getElementById('notificationBell');
+    if (bell) {
+        bell.addEventListener('mouseover', () => {
+            newDropdown.classList.add('show');
+            bell.classList.remove('bell-animate');
+            const notificationIndicator = document.getElementById('notificationIndicator');
+            if (notificationIndicator) {
+                notificationIndicator.style.display = 'none';
+            }
+        });
+
+        bell.addEventListener('mouseleave', () => {
+            closeTimeout = setTimeout(() => {
+                newDropdown.classList.remove('show');
+                bell.classList.remove('bell-animate');
+            }, 500);
+        });
+    }
 }
 
 // Function to initialize notifications after successful login
@@ -149,18 +200,40 @@ function initializeNotificationsAfterLogin(userId) {
 socket.on('loadExistingChats', (chats) => {
     console.log('Received existing chats:', chats);
     // Sort chats by the timestamp of their last message in descending order
-    const sortedChats = chats.sort((a, b) => {
-        const aTimestamp = a.lastMessage?.timestamp || 0;
-        const bTimestamp = b.lastMessage?.timestamp || 0;
-        return bTimestamp - aTimestamp;
-    });
+    const sortedChats = [...chats]; // Create a copy of the array
+    for(let i = 0; i < sortedChats.length; i++) {
+        for(let j = 0; j < sortedChats.length - i - 1; j++) {
+            const timestamp1 = sortedChats[j].lastMessage?.timestamp || 0;
+            const timestamp2 = sortedChats[j + 1].lastMessage?.timestamp || 0;
+            if(timestamp1 < timestamp2) {
+                // Swap elements
+                const temp = sortedChats[j];
+                sortedChats[j] = sortedChats[j + 1];
+                sortedChats[j + 1] = temp;
+            }
+        }
+    }
 
-    // Get the last three messages
-    lastMessages = sortedChats.slice(0, 3).map(chat => ({
-        chatRoomId: chat.id,
-        chatName: chat.name,
-        message: chat.lastMessage || { sender: 'System', text: 'No messages yet' }
-    }));
+    // Take the first three chats and create lastMessages entries
+    sortedChats.slice(0, 3).forEach(chat => {
+        const newMessage = {
+            chatRoomId: chat.id,
+            chatName: chat.name,
+            message: chat.lastMessage || { sender: 'System', text: 'No messages yet' }
+        };
+        
+        const existingMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === chat.id);
+        if (existingMessageIndex !== -1) {
+            // If chat exists, remove it
+            lastMessages.splice(existingMessageIndex, 1);
+        }
+        
+        // Add new message to start and maintain max size
+        lastMessages.unshift(newMessage);
+        if (lastMessages.length > 3) {
+            lastMessages.pop();
+        }
+    });
 
     // Update notification dropdown
     updateNotificationDropdown();
@@ -168,22 +241,26 @@ socket.on('loadExistingChats', (chats) => {
 
 // Handle new message notifications
 socket.on('newMessageNotification', ({ chatRoomId, message }) => {
-    // Update lastMessages array
     const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
     const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
 
-    // Remove existing message for this chat room if it exists
-    lastMessages = lastMessages.filter(msg => msg.chatRoomId !== chatRoomId);
-
-    // Add new message at the beginning
-    lastMessages.unshift({
+    const existingMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === chatRoomId);
+    const newMessage = {
         chatRoomId,
         chatName,
         message
-    });
+    };
 
-    // Keep only last 3 messages
-    lastMessages = lastMessages.slice(0, 3);
+    if (existingMessageIndex !== -1) {
+        // If chat exists, remove it
+        lastMessages.splice(existingMessageIndex, 1);
+    }
+
+    // Add new message to start and maintain max size
+    lastMessages.unshift(newMessage);
+    if (lastMessages.length > 3) {
+        lastMessages.pop();
+    }
 
     // Update the dropdown
     updateNotificationDropdown();
@@ -199,24 +276,45 @@ socket.on('newMessageNotification', ({ chatRoomId, message }) => {
 socket.on('offlineNotifications', (notifications) => {
     console.log('Received offline notifications:', notifications);
     
-    // Sort notifications by timestamp if available
-    const sortedNotifications = notifications.sort((a, b) => {
-        const aTime = a.message.timestamp ? new Date(a.message.timestamp) : new Date(0);
-        const bTime = b.message.timestamp ? new Date(b.message.timestamp) : new Date(0);
-        return bTime - aTime;
-    });
+    if (notifications && notifications.length > 0) {
+        // Sort offline notifications by timestamp
+        const sortedNotifications = notifications.sort((a, b) => {
+            const aTime = a.message.timestamp ? new Date(a.message.timestamp) : new Date(0);
+            const bTime = b.message.timestamp ? new Date(b.message.timestamp) : new Date(0);
+            return bTime - aTime;
+        });
 
-    // Update lastMessages with offline notifications
-    lastMessages = sortedNotifications.slice(0, 3).map(({ chatRoomId, message }) => {
-        const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
-        const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
-        return {
-            chatRoomId,
-            chatName,
-            message
-        };
-    });
+        // Process each sorted notification
+        sortedNotifications.forEach(({ chatRoomId, message }) => {
+            const chatListItem = document.querySelector(`.chat-list-item[data-room-id="${chatRoomId}"]`);
+            const chatName = chatListItem ? chatListItem.textContent.trim() : 'Unknown Chat';
+            
+            const existingMessageIndex = lastMessages.findIndex(msg => msg.chatRoomId === chatRoomId);
+            const newMessage = {
+                chatRoomId,
+                chatName,
+                message
+            };
 
-    // Update the dropdown
-    updateNotificationDropdown();
+            if (existingMessageIndex !== -1) {
+                // If chat exists, remove it
+                lastMessages.splice(existingMessageIndex, 1);
+            }
+
+            // Add new message to start and maintain max size
+            lastMessages.unshift(newMessage);
+            if (lastMessages.length > 3) {
+                lastMessages.pop();
+            }
+        });
+
+        // Update the dropdown
+        updateNotificationDropdown();
+
+        // Show notification indicator
+        const notificationIndicator = document.getElementById('notificationIndicator');
+        const bell = document.getElementById('notificationBell');
+        notificationIndicator.style.display = 'block';
+        bell.classList.add('bell-animate');
+    }
 });

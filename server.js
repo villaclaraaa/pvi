@@ -109,6 +109,7 @@ io.on('connection', (socket) => {
         // Check for offline notifications
         try {
             const offlineNotifications = await OfflineNotification.findOne({ userId });
+            console.log("offlineNotifications", offlineNotifications);
             if (offlineNotifications && offlineNotifications.notifications.length > 0) {
                 // Send stored notifications to the user
                 socket.emit('offlineNotifications', offlineNotifications.notifications);
@@ -224,7 +225,9 @@ io.on('connection', (socket) => {
 
             // Handle notifications for all members
             for (const studentId of chatRoom.studentIds) {
+                console.log("studentId", studentId);
                 if (onlineUsers[studentId]) {
+                    console.log("user is online");
                     // User is online - send real-time notification
                     const userSocket = Array.from(io.sockets.sockets.values())
                         .find(s => s.userId === studentId);
@@ -232,6 +235,7 @@ io.on('connection', (socket) => {
                         userSocket.emit('newMessageNotification', { chatRoomId, message });
                     }
                 } else {
+                    console.log("user is offline");
                     // User is offline - store notification
                     try {
                         await OfflineNotification.findOneAndUpdate(
@@ -243,6 +247,7 @@ io.on('connection', (socket) => {
                             },
                             { upsert: true }
                         );
+                        console.log("offline notification stored");
                     } catch (error) {
                         console.error('Error storing offline notification:', error);
                     }
@@ -365,6 +370,17 @@ io.on('connection', (socket) => {
             }
         } catch (error) {
             console.error('Error removing members from chat room:', error);
+        }
+    });
+
+    socket.on('getChatName', async (chatRoomId) => {
+        try {
+            const chatRoom = await ChatRoom.findOne({ id: chatRoomId });
+            const chatName = chatRoom ? chatRoom.name : 'Unknown Chat';
+            socket.emit(`chatName:${chatRoomId}`, chatName);
+        } catch (error) {
+            console.error('Error fetching chat name:', error);
+            socket.emit(`chatName:${chatRoomId}`, 'Unknown Chat');
         }
     });
 

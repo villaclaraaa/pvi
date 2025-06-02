@@ -734,54 +734,57 @@ async function loadStudents() {
 
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Check session storage for login status
+    const storedUsername = sessionStorage.getItem("username");
+    const storedUserId = sessionStorage.getItem("userId");
+    
+    if (storedUsername && storedUserId) {
+        userLogined = true;
+        document.getElementById('username').innerText = storedUsername;
+        document.getElementById('loginbutton').innerText = "Log out";
+        document.getElementById('loginbutton').onclick = LogOut;
 
-    /*let dashboardNav = this.document.getElementById("dashboardNav");
-    if(window.innerWidth < 1000)
-    {
-        dashboardNav.innerHTML = "Db";
-    }*/
+        // Show notification container
+        const notificationContainer = document.querySelector('.notification-container');
+        if (notificationContainer) {
+            notificationContainer.style.display = 'inline-block';
+            if (typeof initializeNotifications === 'function') {
+                initializeNotifications(storedUserId);
+            }
+        }
+    }
 
-        loadStudents();
-
-        
-        let userdropdown = document.getElementById("userdropdown");
-        let username = document.getElementById("username");
-        
-        
-        
-        
-        
-        username.addEventListener("mouseover", function () {
-            
-            userdropdown.classList.add("show");
-        });
-        
-        username.addEventListener("mouseleave", function () {
-            userdropdown.classList.remove("show");
-        });
-        
-        userdropdown.addEventListener("mouseover", function () {
-            userdropdown.classList.add("show");
-        });
-        
-        userdropdown.addEventListener("mouseleave", function () {
-            userdropdown.classList.remove("show");
-        });
-        
-        var masterCheckbox = document.getElementById("masterCheckbox"); // Replace with your actual ID
-        
-        masterCheckbox.addEventListener('change', function () {
-            // Select checkboxes dynamically each time the master checkbox is toggled
-            var checkboxes = document.querySelectorAll(".row-checkbox");
-            
-            
-            checkboxes.forEach(element => {
-                element.checked = masterCheckbox.checked; // Check/uncheck all
-            });
-        });
-        
-        
+    loadStudents();
+    
+    let userdropdown = document.getElementById("userdropdown");
+    let username = document.getElementById("username");
+    
+    username.addEventListener("mouseover", function () {
+        userdropdown.classList.add("show");
     });
+    
+    username.addEventListener("mouseleave", function () {
+        userdropdown.classList.remove("show");
+    });
+    
+    userdropdown.addEventListener("mouseover", function () {
+        userdropdown.classList.add("show");
+    });
+    
+    userdropdown.addEventListener("mouseleave", function () {
+        userdropdown.classList.remove("show");
+    });
+    
+    var masterCheckbox = document.getElementById("masterCheckbox");
+    
+    masterCheckbox.addEventListener('change', function () {
+        var checkboxes = document.querySelectorAll(".row-checkbox");
+        
+        checkboxes.forEach(element => {
+            element.checked = masterCheckbox.checked;
+        });
+    });
+});
     
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker
